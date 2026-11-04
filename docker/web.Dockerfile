@@ -3,8 +3,12 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-COPY packages/web/package.json ./
-RUN npm install --omit=optional
+# 锁文件必须一起复制，才能用 npm ci 复现依赖树
+COPY packages/web/package.json packages/web/package-lock.json ./
+
+# 不能加 --omit=optional：rollup / esbuild 的平台二进制在 optionalDependencies 里，
+# 跳过会导致 vite build 报 "Cannot find module @rollup/rollup-linux-x64-musl"
+RUN npm ci --no-audit --no-fund
 
 COPY packages/web/ ./
 RUN npm run build

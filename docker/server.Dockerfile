@@ -6,11 +6,14 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-COPY packages/server/package.json ./
-RUN npm install --omit=optional
+# 锁文件必须一起复制，才能用 npm ci 复现依赖树
+COPY packages/server/package.json packages/server/package-lock.json ./
 
+# 先放 prisma schema，@prisma/client 的 postinstall 才能正确生成
 COPY packages/server/prisma ./prisma
-RUN npx prisma generate
+
+# 不能加 --omit=optional：平台相关的引擎包在 optionalDependencies 里
+RUN npm ci --no-audit --no-fund && npx prisma generate
 
 COPY packages/server/tsconfig.json packages/server/nest-cli.json ./
 COPY packages/server/src ./src
