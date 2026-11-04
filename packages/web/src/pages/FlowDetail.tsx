@@ -181,8 +181,15 @@ export default function FlowDetail() {
       </Button>
 
       <Card bodyStyle={{ padding: '18px 22px' }}>
-        <Space size={10} style={{ marginBottom: 8 }}>
-          <span style={{ fontSize: 21, fontWeight: 600, letterSpacing: '-0.022em', lineHeight: 1.3 }}>
+        <Space size={10} wrap style={{ marginBottom: 8 }}>
+          <span
+            style={{
+              fontSize: 'clamp(17px, 5vw, 21px)',
+              fontWeight: 600,
+              letterSpacing: '-0.022em',
+              lineHeight: 1.3,
+            }}
+          >
             {inst.title}
           </span>
           {statusTag(inst.status)}
@@ -192,7 +199,7 @@ export default function FlowDetail() {
             </Tag>
           )}
         </Space>
-        <Descriptions size="small" column={3} style={{ marginTop: 6 }}>
+        <Descriptions size="small" column={{ xs: 1, sm: 2, md: 3 }} style={{ marginTop: 6 }}>
           <Descriptions.Item label="流程">{data.definition.name}</Descriptions.Item>
           <Descriptions.Item label="发起部门">{inst.orgName}</Descriptions.Item>
           <Descriptions.Item label="发起人">{inst.initiatorName}</Descriptions.Item>

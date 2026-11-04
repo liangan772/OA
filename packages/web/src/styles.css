@@ -602,3 +602,26 @@ body {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
 }
+
+/* 移动端：描述列表不允许逐字换行 */
+@media (max-width: 768px) {
+  .ant-descriptions-item-label {
+    white-space: nowrap;
+    padding-inline-end: 10px !important;
+  }
+  .ant-descriptions-item-content {
+    word-break: break-word;
+    min-width: 0;
+  }
+  .ant-descriptions-row > td {
+    padding-bottom: 6px !important;
+  }
+  .ant-card-head-title {
+    white-space: normal;
+  }
+  /* 详情页顶部返回按钮更紧凑 */
+  .page > .ant-space:first-child,
+  .ant-btn.ant-btn-text.ant-btn-sm {
+    min-height: 32px;
+  }
+}

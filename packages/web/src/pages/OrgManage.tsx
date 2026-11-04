@@ -485,17 +485,17 @@ export default function OrgManage() {
 
         <Form form={typeForm} layout="vertical">
           <Row gutter={10}>
-            <Col span={8}>
+            <Col xs={24} sm={8}>
               <Form.Item name="code" label="编码" rules={[{ required: true, message: '必填' }]}>
                 <Input placeholder="如 GROUP" />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col xs={24} sm={8}>
               <Form.Item name="name" label="名称" rules={[{ required: true, message: '必填' }]}>
                 <Input placeholder="如 集团" />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col xs={24} sm={8}>
               <Form.Item name="isUnit" label="视为单位" valuePropName="checked" initialValue={false}>
                 <Switch />
               </Form.Item>

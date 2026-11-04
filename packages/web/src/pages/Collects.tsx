@@ -129,7 +129,7 @@ export default function Collects() {
       <Drawer open={!!detail} onClose={() => setDetail(null)} width={760} title={detail?.title}>
         {detail && (
           <>
-            <Descriptions size="small" column={3} style={{ marginBottom: 16 }}>
+            <Descriptions size="small" column={{ xs: 1, sm: 2, md: 3 }} style={{ marginBottom: 16 }}>
               <Descriptions.Item label="回收份数">{detail.responses.length}</Descriptions.Item>
               <Descriptions.Item label="截止时间">
                 {detail.deadline ? dayjs(detail.deadline).format('YYYY-MM-DD') : '不限'}
