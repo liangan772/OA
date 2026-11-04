@@ -127,17 +127,24 @@ async function main() {
   ok(dChild.definition.type === 'APPROVE', '子实例是审批流程');
   ok(dChild.parent?.id === inst.id, '子实例正确回指父流程');
 
-  console.log('\n[6] 上级审批：一票否决');
+  console.log('\n[6] 上级审批：一票否决后流程继续');
   let adminTodo = await todoOf(admin, childId);
   const adminVote = adminTodo.find((t) => t.nodeType === 'VOTE');
   ok(!!adminVote, '上级负责人收到表态待办');
   await act(admin, adminVote.taskId, 'DISAGREE', '窗口调整涉及预算，暂不批准');
+
   const dVeto = await detail(admin, childId);
-  ok(dVeto.instance.status === 'VETOED', '负责人否决 → 审批实例被一票否决', dVeto.instance.status);
+  ok(dVeto.instance.status === 'RUNNING', '否决不再终止流程，继续向下', dVeto.instance.status);
   const vetoTask = dVeto.nodeInstances.flatMap((n) => n.tasks || []).find((t) => t.isVeto);
   ok(!!vetoTask, '否决记录已留痕');
+  const vetoSumNi = dVeto.nodeInstances.find((n) => n.nodeType === 'SUMMARIZE');
+  ok(vetoSumNi?.result?.suggested === 'REJECT', '总结节点建议结论为不通过', vetoSumNi?.result?.suggested);
 
-  console.log('\n[7] 否决回传：下级回到上报节点等待补正');
+  console.log('\n[7] 总结人按否决意见退回：下级回到上报节点等待补正');
+  const vetoSumTask = (await todoOf(admin, childId)).find((t) => t.nodeType === 'SUMMARIZE');
+  ok(!!vetoSumTask, '总结人收到待办');
+  await act(admin, vetoSumTask.taskId, 'REJECT', '按否决意见退回修改');
+
   const dBack = await detail(wang, inst.id);
   ok(dBack.instance.status === 'RUNNING', '父流程被唤醒继续运行', dBack.instance.status);
   ok(dBack.instance.round === 2, '轮次递增到 2', dBack.instance.round);

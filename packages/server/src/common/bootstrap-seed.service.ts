@@ -22,6 +22,7 @@ export class BootstrapSeedService implements OnModuleInit {
     try {
       await this.ensureNodeDefinitions();
       await this.ensureOrgTypes();
+      await this.backfillNodeNames();
     } catch (e: any) {
       // 表还没建好（比如首次启动 db push 未完成）时不阻断启动
       this.logger.warn(`内置数据初始化跳过：${e?.message || e}`);
@@ -50,6 +51,38 @@ export class BootstrapSeedService implements OnModuleInit {
     });
 
     this.logger.log(`已补齐 ${missing.length} 个节点定义：${missing.map((m) => m.type).join(', ')}`);
+  }
+
+  /** 历史节点实例缺少显示名时，按模板节点名回填一次 */
+  async backfillNodeNames() {
+    const empties = await this.prisma.nodeInstance.findMany({
+      where: { name: '' },
+      select: { id: true, nodeKey: true, instanceId: true },
+      take: 500,
+    });
+    if (!empties.length) return;
+
+    const instances = await this.prisma.flowInstance.findMany({
+      where: { id: { in: [...new Set(empties.map((e) => e.instanceId))] } },
+      select: { id: true, definitionId: true },
+    });
+    const defOfInstance = new Map(instances.map((i) => [i.id, i.definitionId]));
+
+    const nodes = await this.prisma.flowDefNode.findMany({
+      where: { definitionId: { in: [...new Set(instances.map((i) => i.definitionId))] } },
+      select: { definitionId: true, nodeKey: true, name: true },
+    });
+    const nameOf = new Map(nodes.map((n) => [`${n.definitionId}:${n.nodeKey}`, n.name]));
+
+    let filled = 0;
+    for (const ni of empties) {
+      const defId = defOfInstance.get(ni.instanceId);
+      const name = defId ? nameOf.get(`${defId}:${ni.nodeKey}`) : null;
+      if (!name) continue;
+      await this.prisma.nodeInstance.update({ where: { id: ni.id }, data: { name } });
+      filled += 1;
+    }
+    if (filled) this.logger.log(`已回填 ${filled} 个历史节点名称`);
   }
 
   /** 三种内置组织类型：存在则同步名称与语义，不存在则创建 */

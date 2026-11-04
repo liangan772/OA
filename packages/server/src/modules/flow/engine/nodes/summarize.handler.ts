@@ -25,7 +25,8 @@ export class SummarizeHandler implements NodeHandler {
       veto: tasks.some((t) => t.isVeto),
     };
 
-    const suggested = this.decide(config, stats);
+    // 上游出现一票否决时，建议结论直接为不通过
+    const suggested = stats.veto ? 'REJECT' : this.decide(config, stats);
     const assignees = await resolver.resolve(config.summarizerRule, config, instance.orgId);
     if (!assignees.length) {
       throw new BadRequestException(`【${ctx.node.name}】未解析到总结人，请检查编制任职`);
@@ -43,7 +44,7 @@ export class SummarizeHandler implements NodeHandler {
       })),
     });
 
-    return { status: 'ACTIVE', data: { stats, suggested } };
+    return { status: 'ACTIVE', data: { stats, suggested, vetoed: stats.veto } };
   }
 
   async onTask(ctx: HandlerContext, task: any, input: TaskInput): Promise<StepOutcome> {

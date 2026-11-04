@@ -148,6 +148,7 @@ export class FlowEngineService implements FlowEnginePort {
             instanceId: inst.id,
             nodeKey: node.nodeKey,
             nodeType: node.nodeType,
+            name: node.name || node.nodeKey,
             configSnapshot: node.config ?? {},
             status: 'PENDING',
             round: inst.round,
@@ -186,7 +187,11 @@ export class FlowEngineService implements FlowEnginePort {
         return;
       }
       if (nextKey === null) {
-        await this.finishInstance(inst.id, 'APPROVED', 'PASS');
+        await this.finishInstance(
+          inst.id,
+          FINAL_STATUS[result.outcome || ''] || 'APPROVED',
+          result.outcome || 'PASS',
+        );
         return;
       }
 
@@ -252,7 +257,11 @@ export class FlowEngineService implements FlowEnginePort {
       if (nextKey === undefined) {
         await this.finishInstance(inst.id, FINAL_STATUS[result.outcome] || 'TERMINATED', result.outcome || 'TERMINATED');
       } else if (nextKey === null) {
-        await this.finishInstance(inst.id, 'APPROVED', 'PASS');
+        await this.finishInstance(
+          inst.id,
+          FINAL_STATUS[result.outcome || ''] || 'APPROVED',
+          result.outcome || 'PASS',
+        );
       } else {
         await this.prisma.flowInstance.update({ where: { id: inst.id }, data: { currentNodeKey: nextKey } });
         await this.advance(inst.id);
@@ -336,6 +345,9 @@ export class FlowEngineService implements FlowEnginePort {
     if (branches && typeof branches === 'object' && outcome && outcome in branches) {
       return branches[outcome] ?? null;
     }
+    // 一票否决不再是硬终止：模板给了后继就继续往下走，
+    // 由后续节点（总结 / 返回）决定最终结论
+    if (outcome === 'VETOED') return node?.nextNodeKey ?? null;
     if (outcome && FINAL_STATUS[outcome]) return undefined;
     return node?.nextNodeKey ?? null;
   }

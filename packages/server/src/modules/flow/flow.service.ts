@@ -144,6 +144,7 @@ export class FlowService {
     const keys = new Set<string>();
     for (const n of nodes) {
       if (!n.nodeKey?.trim()) throw new BadRequestException('节点标识不能为空');
+      if (!n.name?.trim()) throw new BadRequestException(`节点 ${n.nodeKey} 缺少显示名称`);
       if (keys.has(n.nodeKey)) throw new BadRequestException(`节点标识重复：${n.nodeKey}`);
       keys.add(n.nodeKey);
     }
@@ -256,6 +257,7 @@ export class FlowService {
         flowName: t.instance.definition.name,
         flowType: t.instance.definition.type,
         nodeName:
+          t.nodeInstance.name ||
           t.instance.definition.nodes.find((n) => n.nodeKey === t.nodeInstance.nodeKey)?.name ||
           t.nodeInstance.nodeKey,
         nodeType: t.nodeInstance.nodeType,
@@ -270,7 +272,7 @@ export class FlowService {
   async done(userId: string) {
     const tasks = await this.prisma.task.findMany({
       where: { assigneeId: userId, status: { in: ['DONE', 'CANCELLED', 'TIMEOUT'] } },
-      include: { instance: { include: { definition: true } } },
+      include: { instance: { include: { definition: true } }, nodeInstance: true },
       orderBy: { finishedAt: 'desc' },
       take: 100,
     });
@@ -279,6 +281,8 @@ export class FlowService {
       instanceId: t.instanceId,
       title: t.instance.title,
       flowName: t.instance.definition.name,
+      nodeName: t.nodeInstance?.name || t.nodeInstance?.nodeKey,
+      nodeType: t.nodeInstance?.nodeType,
       action: t.action,
       opinion: t.opinion,
       finishedAt: t.finishedAt,
@@ -391,7 +395,7 @@ export class FlowService {
         id: ni.id,
         nodeKey: ni.nodeKey,
         nodeType: ni.nodeType,
-        nodeName: nodeNameMap.get(ni.nodeKey) || ni.nodeKey,
+        nodeName: ni.name || nodeNameMap.get(ni.nodeKey) || ni.nodeKey,
         status: ni.status,
         round: ni.round,
         result: ni.result,

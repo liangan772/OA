@@ -173,6 +173,7 @@ export default function Workbench() {
                         description={
                           <Space size={14} style={{ fontSize: 12.5, color: 'var(--text-3)', marginTop: 2 }}>
                             <span>{item.flowName}</span>
+                            {item.nodeName && <span>节点：{item.nodeName}</span>}
                             <span>{item.finishedAt ? dayjs(item.finishedAt).format('YYYY-MM-DD HH:mm') : ''}</span>
                             {item.opinion && <span>意见：{item.opinion}</span>}
                           </Space>

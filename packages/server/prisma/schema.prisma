@@ -231,6 +231,7 @@ model NodeInstance {
   instance       FlowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
   nodeKey        String
   nodeType       String
+  name           String       @default("") // 节点显示名快照，模板改版后历史仍可读
   status         String       @default("PENDING") // PENDING | ACTIVE | WAITING | DONE | RETURNED | TERMINATED
   configSnapshot Json
   result         Json?

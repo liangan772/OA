@@ -79,16 +79,25 @@ export class VoteHandler implements NodeHandler {
       },
     });
 
-    // 一票否决：立即收敛，其余待办作废
+    // 一票否决：本节点收敛、其余待办作废，但流程继续（由后续节点处理否决结论）
     if (isVeto) {
       await prisma.task.updateMany({
         where: { nodeInstanceId: nodeInstance.id, status: 'PENDING' },
         data: { status: 'CANCELLED' },
       });
+      const tally = await prisma.task.findMany({ where: { nodeInstanceId: nodeInstance.id } });
       return {
         status: 'DONE',
         outcome: 'VETOED',
-        data: { vetoedBy: task.assigneeId, vetoOpinion: input.opinion ?? '' },
+        data: {
+          vetoed: true,
+          vetoedBy: task.assigneeId,
+          vetoOpinion: input.opinion ?? '',
+          agree: tally.filter((t) => t.action === 'AGREE').length,
+          disagree: tally.filter((t) => t.action === 'DISAGREE').length,
+          abstain: tally.filter((t) => t.action === 'ABSTAIN').length,
+          total: tally.length,
+        },
       };
     }
 
