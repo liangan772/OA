@@ -1,0 +1,15 @@
+**/node_modules
+**/dist
+**/build
+**/.pgdata
+**/.env
+**/*.db
+**/*.db-journal
+.git
+.gitignore
+docs
+README.md
+docker-compose.yml
+packages/web/dist
+coverage
+uploads

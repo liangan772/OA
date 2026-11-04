@@ -1,0 +1,14 @@
+import { Module } from '@nestjs/common';
+import { PrismaModule } from './prisma/prisma.module';
+import { RedisModule } from './modules/redis/redis.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { OrgModule } from './modules/org/org.module';
+import { FlowModule } from './modules/flow/flow.module';
+import { BizModule } from './modules/biz/biz.module';
+import { HealthController } from './modules/health/health.controller';
+
+@Module({
+  imports: [PrismaModule, RedisModule, AuthModule, OrgModule, FlowModule, BizModule],
+  controllers: [HealthController],
+})
+export class AppModule {}

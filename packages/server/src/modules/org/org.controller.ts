@@ -1,0 +1,132 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { IsBoolean, IsIn, IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { OrgService } from './org.service';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+
+class CreateOrgDto {
+  @IsString() @IsNotEmpty() code: string;
+  @IsString() @IsNotEmpty() name: string;
+  @IsIn(['UNIT', 'DEPARTMENT', 'SECTION']) type: string;
+  @IsOptional() @IsString() parentId?: string;
+  @IsOptional() @IsInt() sort?: number;
+}
+
+class CreatePositionDto {
+  @IsString() @IsNotEmpty() orgId: string;
+  @IsString() @IsNotEmpty() code: string;
+  @IsString() @IsNotEmpty() name: string;
+  @IsOptional() @IsString() duty?: string;
+  @IsOptional() @IsString() rank?: string;
+  @IsOptional() @IsBoolean() isLeader?: boolean;
+  @IsOptional() @IsBoolean() isDeputy?: boolean;
+  @IsOptional() @IsInt() headcount?: number;
+  @IsOptional() @IsInt() sort?: number;
+}
+
+class AssignPostDto {
+  @IsString() @IsNotEmpty() userId: string;
+  @IsString() @IsNotEmpty() positionId: string;
+  @IsOptional() @IsBoolean() isPrimary?: boolean;
+}
+
+class CreateUserDto {
+  @IsString() @IsNotEmpty() account: string;
+  @IsString() @IsNotEmpty() name: string;
+  @IsOptional() @IsString() password?: string;
+  @IsOptional() @IsString() phone?: string;
+  @IsOptional() @IsString() title?: string;
+}
+
+@Controller('org')
+@UseGuards(JwtAuthGuard)
+export class OrgController {
+  constructor(private readonly org: OrgService) {}
+
+  @Get('tree')
+  tree() {
+    return this.org.tree();
+  }
+
+  @Get('list')
+  list(@Query('keyword') keyword?: string) {
+    return this.org.list(keyword);
+  }
+
+  @Get('ledger')
+  ledger(@Query('rootUnitId') rootUnitId?: string) {
+    return this.org.ledger(rootUnitId);
+  }
+
+  @Post()
+  create(@Body() dto: CreateOrgDto) {
+    return this.org.create(dto);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: any) {
+    return this.org.update(id, dto);
+  }
+
+  @Post(':id/move')
+  move(@Param('id') id: string, @Body('parentId') parentId: string | null) {
+    return this.org.move(id, parentId ?? null);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.org.remove(id);
+  }
+
+  // 编制位
+  @Post('position')
+  createPosition(@Body() dto: CreatePositionDto) {
+    return this.org.createPosition(dto);
+  }
+
+  @Patch('position/:id')
+  updatePosition(@Param('id') id: string, @Body() dto: any) {
+    return this.org.updatePosition(id, dto);
+  }
+
+  @Delete('position/:id')
+  removePosition(@Param('id') id: string) {
+    return this.org.removePosition(id);
+  }
+
+  // 任职
+  @Post('post')
+  assignPost(@Body() dto: AssignPostDto) {
+    return this.org.assignPost(dto.userId, dto.positionId, dto.isPrimary ?? true);
+  }
+
+  @Delete('post/:id')
+  removePost(@Param('id') id: string) {
+    return this.org.removePost(id);
+  }
+
+  // 人员
+  @Get('users')
+  users(@Query('keyword') keyword?: string) {
+    return this.org.users(keyword);
+  }
+
+  @Post('user')
+  createUser(@Body() dto: CreateUserDto) {
+    return this.org.createUser(dto);
+  }
+
+  @Patch('user/:id')
+  updateUser(@Param('id') id: string, @Body() dto: any) {
+    return this.org.updateUser(id, dto);
+  }
+}

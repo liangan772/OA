@@ -1,0 +1,23 @@
+{
+  "name": "oooa",
+  "version": "0.1.0",
+  "private": true,
+  "description": "节点化 OA 系统：统一编制底座 + 通用节点引擎 + 流程/业务双系统",
+  "scripts": {
+    "install:all": "npm --prefix packages/server install && npm --prefix packages/web install",
+    "setup": "npm run install:all && npm run db:reset",
+    "dev": "concurrently -n server,web -c cyan,magenta \"npm:dev:server\" \"npm:dev:web\"",
+    "dev:server": "npm --prefix packages/server run start:dev",
+    "dev:web": "npm --prefix packages/web run dev",
+    "build": "npm --prefix packages/server run build && npm --prefix packages/web run build",
+    "db:push": "npm --prefix packages/server run db:push",
+    "db:seed": "npm --prefix packages/server run db:seed",
+    "db:reset": "npm --prefix packages/server run db:reset"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

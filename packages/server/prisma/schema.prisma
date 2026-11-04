@@ -1,0 +1,394 @@
+// OA 系统数据模型
+// 编制域（Org / Position / Post）+ 流程域（Definition / Instance / Node / Task）+ 业务域
+// 开发用 SQLite；切 PostgreSQL 只需改 provider 与 DATABASE_URL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// 一、人员与编制
+// ============================================================
+
+model User {
+  id           String   @id @default(cuid())
+  account      String   @unique
+  passwordHash String
+  name         String
+  phone        String?
+  title        String?
+  status       String   @default("ACTIVE") // ACTIVE | DISABLED
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  posts     Post[]
+  initiated FlowInstance[] @relation("Initiator")
+
+  @@index([status])
+}
+
+/// 组织节点：单位与部门同树，靠 type 区分；rootUnitId 标记所属单位
+model Org {
+  id         String   @id @default(cuid())
+  code       String   @unique
+  name       String
+  type       String // UNIT | DEPARTMENT | SECTION
+  parentId   String?
+  parent     Org?     @relation("OrgTree", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children   Org[]   @relation("OrgTree")
+  rootUnitId String
+  path       String // 物化路径 "/id/id/"，前缀匹配取整棵子树
+  level      Int      @default(1)
+  sort       Int      @default(0)
+  status     String   @default("ACTIVE")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  positions Position[]
+
+  @@index([parentId])
+  @@index([rootUnitId])
+  @@index([path])
+}
+
+model Position {
+  id        String   @id @default(cuid())
+  orgId     String
+  org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  code      String   @unique
+  name      String
+  duty      String?
+  rank      String?
+  isLeader  Boolean  @default(false) // 正职负责人位，唯一，享一票否决
+  isDeputy  Boolean  @default(false)
+  headcount Int      @default(1)
+  sort      Int      @default(0)
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+
+  posts Post[]
+
+  @@index([orgId])
+}
+
+model Post {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  positionId String
+  position   Position  @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  isPrimary  Boolean   @default(true)
+  startAt    DateTime  @default(now())
+  endAt      DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@unique([userId, positionId])
+  @@index([positionId])
+}
+
+/// 跨单位协同授权：A 单位可向 B 单位派单/会签
+model CrossUnitGrant {
+  id           String    @id @default(cuid())
+  grantorOrgId String
+  granteeOrgId String
+  scope        String // FLOW | DOC | COLLECT | ALL
+  flowTypes    String? // 逗号分隔
+  expireAt     DateTime?
+  grantedBy    String?
+  remark       String?
+  status       String    @default("ACTIVE")
+  createdAt    DateTime  @default(now())
+
+  @@index([grantorOrgId])
+  @@index([granteeOrgId])
+}
+
+// ============================================================
+// 二、流程域
+// ============================================================
+
+/// 全局节点定义：六种节点类型各一条，configSchema 驱动前端配置面板
+model NodeDefinition {
+  id            String   @id @default(cuid())
+  type          String   @unique // VOTE | SUMMARIZE | REPORT | RETURN | ASSIGN | EXECUTE
+  name          String
+  description   String?
+  configSchema  Json
+  defaultConfig Json
+  version       Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+/// 内容模板：表单字段定义 + 展示版式，与节点解耦
+model ContentTemplate {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  category  String?
+  schema    Json
+  layout    Json?
+  version   Int      @default(1)
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  definitions FlowDefinition[]
+}
+
+model FlowDefinition {
+  id                String           @id @default(cuid())
+  code              String           @unique
+  name              String
+  type              String // DELIBERATE | APPROVE | EXECUTE | PUBLICITY
+  description       String?
+  contentTemplateId String?
+  contentTemplate   ContentTemplate? @relation(fields: [contentTemplateId], references: [id])
+  startRule         Json?
+  status            String           @default("DRAFT") // DRAFT | PUBLISHED | ARCHIVED
+  version           Int              @default(1)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  nodes     FlowDefNode[]
+  instances FlowInstance[]
+}
+
+model FlowDefNode {
+  id           String         @id @default(cuid())
+  definitionId String
+  definition   FlowDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+  nodeKey      String
+  nodeType     String
+  name         String
+  config       Json
+  nextNodeKey  String?
+  sort         Int            @default(0)
+
+  @@unique([definitionId, nodeKey])
+}
+
+model FlowInstance {
+  id                   String         @id @default(cuid())
+  definitionId         String
+  definition           FlowDefinition @relation(fields: [definitionId], references: [id])
+  definitionVersion    Int
+  title                String
+  status               String         @default("RUNNING") // RUNNING | WAITING | APPROVED | REJECTED | VETOED | RETURNED | TERMINATED | ADDRESS_FAILED
+  formData             Json?
+  orgId                String
+  rootUnitId           String
+  initiatorId          String
+  initiator            User           @relation("Initiator", fields: [initiatorId], references: [id])
+  parentInstanceId     String? // 上报生成的上级实例指回下级
+  originNodeInstanceId String? // 子实例指回触发它的上报节点
+  rootInstanceId       String? // 整棵实例树的根
+  currentNodeKey       String?
+  round                Int            @default(1)
+  outcome              String?
+  closedAt             DateTime?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  nodeInstances NodeInstance[]
+  tasks         Task[]
+  logs          FlowLog[]
+
+  @@index([status])
+  @@index([orgId])
+  @@index([rootUnitId])
+  @@index([parentInstanceId])
+  @@index([initiatorId])
+}
+
+model NodeInstance {
+  id             String       @id @default(cuid())
+  instanceId     String
+  instance       FlowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  nodeKey        String
+  nodeType       String
+  status         String       @default("PENDING") // PENDING | ACTIVE | WAITING | DONE | RETURNED | TERMINATED
+  configSnapshot Json
+  result         Json?
+  round          Int          @default(1)
+  startedAt      DateTime     @default(now())
+  finishedAt     DateTime?
+
+  tasks Task[]
+
+  @@index([instanceId])
+}
+
+model Task {
+  id             String       @id @default(cuid())
+  nodeInstanceId String
+  nodeInstance   NodeInstance @relation(fields: [nodeInstanceId], references: [id], onDelete: Cascade)
+  instanceId     String
+  instance       FlowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  assigneeId     String
+  assigneeOrgId  String
+  status         String       @default("PENDING") // PENDING | DONE | CANCELLED | TIMEOUT
+  action         String? // AGREE | DISAGREE | ABSTAIN | CONFIRM | RETURN | PASS
+  opinion        String?
+  attachments    String?
+  isVeto         Boolean      @default(false)
+  deadline       DateTime?
+  finishedAt     DateTime?
+  version        Int          @default(0)
+  createdAt      DateTime     @default(now())
+
+  @@index([assigneeId, status])
+  @@index([instanceId])
+  @@index([nodeInstanceId])
+}
+
+model FlowLog {
+  id             String       @id @default(cuid())
+  instanceId     String
+  instance       FlowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  nodeInstanceId String?
+  nodeKey        String?
+  actorId        String?
+  actorName      String?
+  action         String
+  detail         String?
+  createdAt      DateTime     @default(now())
+
+  @@index([instanceId])
+}
+
+// ============================================================
+// 三、业务域
+// ============================================================
+
+model Document {
+  id             String   @id @default(cuid())
+  title          String
+  content        String?
+  ownerOrgId     String
+  rootUnitId     String
+  creatorId      String
+  status         String   @default("DRAFT") // DRAFT | REVIEWING | PUBLISHED | ARCHIVED
+  flowInstanceId String?
+  collaborators  String? // JSON: [{userId, role}]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  versions DocVersion[]
+
+  @@index([ownerOrgId])
+  @@index([rootUnitId])
+}
+
+model DocVersion {
+  id        String   @id @default(cuid())
+  docId     String
+  doc       Document @relation(fields: [docId], references: [id], onDelete: Cascade)
+  version   Int
+  content   String?
+  authorId  String
+  remark    String?
+  createdAt DateTime @default(now())
+
+  @@index([docId])
+}
+
+model Mail {
+  id             String   @id @default(cuid())
+  subject        String
+  body           String?
+  senderId       String
+  senderOrgId    String
+  rootUnitId     String
+  status         String   @default("SENT")
+  flowInstanceId String?
+  createdAt      DateTime @default(now())
+
+  recipients MailRecipient[]
+}
+
+model MailRecipient {
+  id     String    @id @default(cuid())
+  mailId String
+  mail   Mail      @relation(fields: [mailId], references: [id], onDelete: Cascade)
+  userId String
+  type   String    @default("TO")
+  readAt DateTime?
+
+  @@index([userId])
+  @@index([mailId])
+}
+
+model CollectForm {
+  id             String   @id @default(cuid())
+  title          String
+  description    String?
+  schema         Json
+  scope          String? // JSON: 下发范围（orgIds）
+  rootUnitId     String
+  creatorId      String
+  status         String   @default("DRAFT") // DRAFT | PUBLISHED | CLOSED
+  deadline       DateTime?
+  flowInstanceId String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  responses CollectResponse[]
+}
+
+model CollectResponse {
+  id          String      @id @default(cuid())
+  formId      String
+  form        CollectForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  orgId       String
+  userId      String
+  data        Json
+  status      String      @default("SUBMITTED")
+  submittedAt DateTime    @default(now())
+
+  @@index([formId])
+}
+
+model Attachment {
+  id         String   @id @default(cuid())
+  bizType    String
+  bizId      String
+  fileName   String
+  filePath   String
+  fileSize   Int
+  mimeType   String?
+  uploaderId String
+  createdAt  DateTime @default(now())
+
+  @@index([bizType, bizId])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  content   String?
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  target    String?
+  detail    String?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([actorId])
+}
