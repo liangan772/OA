@@ -161,10 +161,27 @@ export class OrgService {
     });
   }
 
-  async update(id: string, dto: { name?: string; sort?: number; status?: string }) {
+  async update(id: string, dto: { name?: string; sort?: number | null; status?: string }) {
     const org = await this.prisma.org.findUnique({ where: { id } });
     if (!org) throw new NotFoundException('组织不存在');
-    return this.prisma.org.update({ where: { id }, data: dto });
+
+    // 只接受白名单字段，避免前端多传的字段（如 id/type/createdAt）直接透传进 Prisma
+    const data: Record<string, any> = {};
+    if (dto.name !== undefined) {
+      const name = String(dto.name).trim();
+      if (!name) throw new BadRequestException('名称不能为空');
+      if (name.length > 64) throw new BadRequestException('名称不能超过 64 个字符');
+      data.name = name;
+    }
+    if (dto.sort !== undefined && dto.sort !== null) {
+      const n = Number(dto.sort);
+      if (!Number.isFinite(n)) throw new BadRequestException('排序必须是数字');
+      data.sort = Math.trunc(n);
+    }
+    if (dto.status !== undefined) data.status = dto.status;
+
+    if (!Object.keys(data).length) throw new BadRequestException('没有需要更新的内容');
+    return this.prisma.org.update({ where: { id }, data });
   }
 
   /** 移动节点：重算自身与全部后代的 path / level / rootUnitId */
@@ -298,22 +315,31 @@ export class OrgService {
   async updatePosition(id: string, dto: any) {
     const pos = await this.prisma.position.findUnique({ where: { id } });
     if (!pos) throw new NotFoundException('编制位不存在');
+
+    const data: Record<string, any> = {};
+    if (dto.name !== undefined) {
+      const name = String(dto.name).trim();
+      if (!name) throw new BadRequestException('编制名称不能为空');
+      data.name = name;
+    }
+    if (dto.duty !== undefined) data.duty = dto.duty ? String(dto.duty).trim() : null;
+    if (dto.rank !== undefined) data.rank = dto.rank ? String(dto.rank).trim() : null;
+    if (dto.isLeader !== undefined) data.isLeader = !!dto.isLeader;
+    if (dto.isDeputy !== undefined) data.isDeputy = !!dto.isDeputy;
+    // 定编人数清空时回落到 1，不能把 null 写进 Int 字段
+    if (dto.headcount !== undefined) {
+      const hc = Number(dto.headcount);
+      data.headcount = Number.isFinite(hc) && hc > 0 ? Math.trunc(hc) : 1;
+    }
+    if (dto.sort !== undefined && dto.sort !== null) data.sort = Number(dto.sort) || 0;
+
+    if (!Object.keys(data).length) throw new BadRequestException('没有需要更新的内容');
+
     return this.prisma.$transaction(async (tx) => {
-      if (dto.isLeader) {
+      if (data.isLeader) {
         await tx.position.updateMany({ where: { orgId: pos.orgId, isLeader: true }, data: { isLeader: false } });
       }
-      return tx.position.update({
-        where: { id },
-        data: {
-          name: dto.name,
-          duty: dto.duty,
-          rank: dto.rank,
-          isLeader: dto.isLeader,
-          isDeputy: dto.isDeputy,
-          headcount: dto.headcount,
-          sort: dto.sort,
-        },
-      });
+      return tx.position.update({ where: { id }, data });
     });
   }
 

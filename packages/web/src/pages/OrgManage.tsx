@@ -139,7 +139,7 @@ export default function OrgManage() {
     const v = await posForm.validateFields();
     try {
       if (editingPos) {
-        await api.patch(`/org/position/${editingPos.id}`, v);
+        await api.patch(`/org/position/${editingPos.id}`, { ...v, headcount: v.headcount ?? 1 });
         message.success('编制位已更新');
       } else {
         await api.post('/org/position', { ...v, orgId: selectedId });
@@ -163,7 +163,8 @@ export default function OrgManage() {
   const saveOrgEdit = async () => {
     const v = await orgEditForm.validateFields();
     try {
-      await api.patch(`/org/${selectedId}`, v);
+      // InputNumber 清空时是 null，这里回落到 0，避免把 null 传给整型字段
+      await api.patch(`/org/${selectedId}`, { ...v, sort: v.sort ?? 0 });
       message.success('已保存');
       setOrgEditOpen(false);
       load();
