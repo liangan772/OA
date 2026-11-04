@@ -34,6 +34,21 @@ model User {
 }
 
 /// 组织节点：单位与部门同树，靠 type 区分；rootUnitId 标记所属单位
+/// 组织类型字典：内置单位/部门/科室，支持自定义
+/// isUnit 决定该类型是否按「单位」处理（自成 rootUnit、可作为上报边界）
+model OrgType {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  isUnit    Boolean  @default(false)
+  builtin   Boolean  @default(false)
+  sort      Int      @default(0)
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+
+  @@index([status])
+}
+
 model Org {
   id         String   @id @default(cuid())
   code       String   @unique

@@ -235,9 +235,19 @@ async function main() {
     prisma.post.deleteMany(),
     prisma.position.deleteMany(),
     prisma.org.deleteMany(),
+    prisma.orgType.deleteMany(),
     prisma.user.deleteMany(),
     prisma.notification.deleteMany(),
   ]);
+
+  console.log('创建组织类型…');
+  await prisma.orgType.createMany({
+    data: [
+      { code: 'UNIT', name: '单位', isUnit: true, builtin: true, sort: 1 },
+      { code: 'DEPARTMENT', name: '部门', isUnit: false, builtin: true, sort: 2 },
+      { code: 'SECTION', name: '科室', isUnit: false, builtin: true, sort: 3 },
+    ],
+  });
 
   console.log('创建组织…');
   const cityBureau = await createOrg('ORG-ROOT', '市局', 'UNIT');

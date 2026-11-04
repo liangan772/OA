@@ -9,14 +9,14 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { IsBoolean, IsIn, IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { OrgService } from './org.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 class CreateOrgDto {
   @IsString() @IsNotEmpty() code: string;
   @IsString() @IsNotEmpty() name: string;
-  @IsIn(['UNIT', 'DEPARTMENT', 'SECTION']) type: string;
+  @IsString() @IsNotEmpty() type: string;
   @IsOptional() @IsString() parentId?: string;
   @IsOptional() @IsInt() sort?: number;
 }
@@ -83,8 +83,33 @@ export class OrgController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.org.remove(id);
+  remove(@Param('id') id: string, @Query('force') force?: string) {
+    return this.org.remove(id, force === 'true' || force === '1');
+  }
+
+  // ---------------- 组织类型字典 ----------------
+
+  @Get('types')
+  listTypes() {
+    return this.org.listTypes();
+  }
+
+  @Post('types')
+  createType(@Body() dto: { code: string; name: string; isUnit?: boolean; sort?: number }) {
+    return this.org.createType(dto);
+  }
+
+  @Patch('types/:id')
+  updateType(
+    @Param('id') id: string,
+    @Body() dto: { name?: string; isUnit?: boolean; sort?: number; status?: string },
+  ) {
+    return this.org.updateType(id, dto);
+  }
+
+  @Delete('types/:id')
+  removeType(@Param('id') id: string) {
+    return this.org.removeType(id);
   }
 
   // 编制位
@@ -99,8 +124,8 @@ export class OrgController {
   }
 
   @Delete('position/:id')
-  removePosition(@Param('id') id: string) {
-    return this.org.removePosition(id);
+  removePosition(@Param('id') id: string, @Query('force') force?: string) {
+    return this.org.removePosition(id, force === 'true' || force === '1');
   }
 
   // 任职

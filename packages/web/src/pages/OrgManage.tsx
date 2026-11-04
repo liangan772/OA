@@ -9,6 +9,7 @@ import {
   Input,
   InputNumber,
   Modal,
+  Popconfirm,
   Row,
   Select,
   Space,
@@ -20,7 +21,7 @@ import {
   TreeSelect,
   Typography,
 } from 'antd';
-import { PlusOutlined, ApartmentOutlined, TeamOutlined } from '@ant-design/icons';
+import { PlusOutlined, ApartmentOutlined, TeamOutlined, DeleteOutlined } from '@ant-design/icons';
 import api, { errMsg } from '../api/client';
 
 const { Text } = Typography;
@@ -34,8 +35,6 @@ function findNode(nodes: any[], id: string): any {
   return null;
 }
 
-const TYPE_LABEL: Record<string, string> = { UNIT: '单位', DEPARTMENT: '部门', SECTION: '科室' };
-const TYPE_COLOR: Record<string, string> = { UNIT: 'purple', DEPARTMENT: 'blue', SECTION: 'default' };
 
 export default function OrgManage() {
   const [tree, setTree] = useState<any[]>([]);
@@ -45,15 +44,37 @@ export default function OrgManage() {
   const [orgModal, setOrgModal] = useState(false);
   const [posModal, setPosModal] = useState(false);
   const [postModal, setPostModal] = useState<any>(null);
+  const [types, setTypes] = useState<any[]>([]);
+  const [typeModal, setTypeModal] = useState(false);
+  const [typeForm] = Form.useForm();
   const [form] = Form.useForm();
   const [posForm] = Form.useForm();
   const { message } = AntApp.useApp();
 
+  const typeDef = useCallback(
+    (code: string) => types.find((t) => t.code === code),
+    [types],
+  );
+  const typeLabel = useCallback(
+    (code: string) => typeDef(code)?.name || code,
+    [typeDef],
+  );
+  const typeColor = useCallback(
+    (code: string) => (typeDef(code)?.isUnit ? 'purple' : code === 'DEPARTMENT' ? 'blue' : 'default'),
+    [typeDef],
+  );
+
   const load = useCallback(async () => {
-    const [t, l, u] = await Promise.all([api.get('/org/tree'), api.get('/org/ledger'), api.get('/org/users')]);
+    const [t, l, u, ty] = await Promise.all([
+      api.get('/org/tree'),
+      api.get('/org/ledger'),
+      api.get('/org/users'),
+      api.get('/org/types'),
+    ]);
     setTree(t.data);
     setLedger(l.data);
     setUsers(u.data);
+    setTypes(ty.data);
     if (!selectedId && t.data.length) setSelectedId(t.data[0].id);
   }, [selectedId]);
 
@@ -67,7 +88,7 @@ export default function OrgManage() {
     const map = (nodes: any[]): any[] =>
       nodes.map((n) => ({
         value: n.id,
-        title: `${n.name}（${TYPE_LABEL[n.type] || n.type}）`,
+        title: `${n.name}（${typeLabel(n.type)}）`,
         children: map(n.children || []),
       }));
     return map(tree);
@@ -79,7 +100,7 @@ export default function OrgManage() {
       title: (
         <Space size={6}>
           <span>{n.name}</span>
-          <Tag color={TYPE_COLOR[n.type]}>{TYPE_LABEL[n.type] || n.type}</Tag>
+          <Tag color={typeColor(n.type)}>{typeLabel(n.type)}</Tag>
           {n.leaderName && (
             <Text type="secondary" style={{ fontSize: 11 }}>
               {n.leaderName}
@@ -141,8 +162,41 @@ export default function OrgManage() {
 
   const removePosition = async (id: string) => {
     try {
-      await api.delete(`/org/position/${id}`);
+      await api.delete(`/org/position/${id}?force=true`);
       message.success('已删除');
+      load();
+    } catch (e) {
+      message.error(errMsg(e));
+    }
+  };
+
+  const removeOrg = async (id: string) => {
+    try {
+      await api.delete(`/org/${id}?force=true`);
+      message.success('组织已删除');
+      setSelectedId('');
+      load();
+    } catch (e) {
+      message.error(errMsg(e));
+    }
+  };
+
+  const createType = async () => {
+    const v = await typeForm.validateFields();
+    try {
+      await api.post('/org/types', v);
+      message.success('类型已添加');
+      typeForm.resetFields();
+      load();
+    } catch (e) {
+      message.error(errMsg(e));
+    }
+  };
+
+  const removeType = async (id: string) => {
+    try {
+      await api.delete(`/org/types/${id}`);
+      message.success('类型已删除');
       load();
     } catch (e) {
       message.error(errMsg(e));
@@ -190,7 +244,7 @@ export default function OrgManage() {
               title={
                 <Space>
                   <span>{selected.name}</span>
-                  <Tag color={TYPE_COLOR[selected.type]}>{TYPE_LABEL[selected.type]}</Tag>
+                  <Tag color={typeColor(selected.type)}>{typeLabel(selected.type)}</Tag>
                   <Text type="secondary" style={{ fontSize: 12 }}>
                     定编 {selected.positionCount} 人 · 在编 {selected.memberCount} 人
                   </Text>
@@ -204,6 +258,17 @@ export default function OrgManage() {
                   <Button size="small" type="primary" icon={<TeamOutlined />} onClick={() => setPosModal(true)}>
                     新增编制位
                   </Button>
+                  <Popconfirm
+                    title={`删除「${selected.name}」`}
+                    description="会连同下级组织、编制位与任职一并删除，且不可恢复"
+                    okText="删除"
+                    okButtonProps={{ danger: true }}
+                    onConfirm={() => removeOrg(selected.id)}
+                  >
+                    <Button size="small" danger icon={<DeleteOutlined />}>
+                      删除
+                    </Button>
+                  </Popconfirm>
                 </Space>
               }
               bodyStyle={{ padding: 12 }}
@@ -281,7 +346,7 @@ export default function OrgManage() {
                             title: '类型',
                             dataIndex: 'orgType',
                             width: 90,
-                            render: (t: string) => <Tag color={TYPE_COLOR[t]}>{TYPE_LABEL[t]}</Tag>,
+                            render: (t: string) => <Tag color={typeColor(t)}>{typeLabel(t)}</Tag>,
                           },
                           { title: '层级', dataIndex: 'level', width: 70 },
                           { title: '定编', dataIndex: 'headcount', width: 80 },
@@ -308,6 +373,83 @@ export default function OrgManage() {
         </Col>
       </Row>
 
+      <Modal
+        title="组织类型"
+        open={typeModal}
+        onCancel={() => setTypeModal(false)}
+        footer={null}
+        width={560}
+        destroyOnClose
+      >
+        <Table
+          size="small"
+          rowKey="id"
+          pagination={false}
+          dataSource={types}
+          style={{ marginBottom: 16 }}
+          columns={[
+            { title: '名称', dataIndex: 'name' },
+            {
+              title: '编码',
+              dataIndex: 'code',
+              width: 130,
+              render: (c: string) => (
+                <Text code style={{ fontSize: 12 }}>
+                  {c}
+                </Text>
+              ),
+            },
+            {
+              title: '层级语义',
+              dataIndex: 'isUnit',
+              width: 110,
+              render: (v: boolean) =>
+                v ? <Tag color="purple">单位</Tag> : <Tag>部门</Tag>,
+            },
+            {
+              title: '操作',
+              width: 90,
+              render: (_: any, r: any) =>
+                r.builtin ? (
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    内置
+                  </Text>
+                ) : (
+                  <Popconfirm title="删除该类型？" onConfirm={() => removeType(r.id)}>
+                    <Button size="small" type="link" danger icon={<DeleteOutlined />} />
+                  </Popconfirm>
+                ),
+            },
+          ]}
+        />
+
+        <Form form={typeForm} layout="vertical">
+          <Row gutter={10}>
+            <Col span={8}>
+              <Form.Item name="code" label="编码" rules={[{ required: true, message: '必填' }]}>
+                <Input placeholder="如 GROUP" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="name" label="名称" rules={[{ required: true, message: '必填' }]}>
+                <Input placeholder="如 集团" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="isUnit" label="视为单位" valuePropName="checked" initialValue={false}>
+                <Switch />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Button type="primary" icon={<PlusOutlined />} onClick={createType} block>
+            添加类型
+          </Button>
+          <div className="muted" style={{ marginTop: 8 }}>
+            勾选「视为单位」的类型可自成根节点、作为跨单位上报的边界；编码创建后不可修改。
+          </div>
+        </Form>
+      </Modal>
+
       <Modal title="新增组织" open={orgModal} onOk={createOrg} onCancel={() => setOrgModal(false)} destroyOnClose>
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item name="parentId" label="上级组织" initialValue={selectedId || undefined}>
@@ -321,12 +463,27 @@ export default function OrgManage() {
           </Form.Item>
           <Form.Item name="type" label="类型" rules={[{ required: true, message: '请选择类型' }]} initialValue="DEPARTMENT">
             <Select
-              options={[
-                { label: '单位', value: 'UNIT' },
-                { label: '部门', value: 'DEPARTMENT' },
-                { label: '科室', value: 'SECTION' },
-              ]}
+              placeholder="选择类型"
+              options={types
+                .filter((t) => t.status === 'ACTIVE')
+                .map((t) => ({
+                  label: `${t.name}${t.isUnit ? '（单位）' : ''}`,
+                  value: t.code,
+                }))}
+              dropdownRender={(menu) => (
+                <>
+                  {menu}
+                  <div style={{ borderTop: '1px solid var(--border)', marginTop: 4, paddingTop: 4 }}>
+                    <Button type="text" size="small" block icon={<PlusOutlined />} onClick={() => setTypeModal(true)}>
+                      管理组织类型
+                    </Button>
+                  </div>
+                </>
+              )}
             />
+            <div className="muted" style={{ marginTop: 4 }}>
+              类型决定层级语义：「单位」类可自成根节点，其余必须挂在上级下
+            </div>
           </Form.Item>
         </Form>
       </Modal>
