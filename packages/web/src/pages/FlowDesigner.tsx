@@ -368,7 +368,7 @@ export default function FlowDesigner() {
       </div>
 
       <Row gutter={16}>
-        <Col span={6}>
+        <Col xs={24} lg={6}>
           <Card size="small" title="流程模板" bodyStyle={{ padding: 10 }}>
             <Space direction="vertical" style={{ width: '100%' }} size={6}>
               {defs.map((d) => (
@@ -406,7 +406,7 @@ export default function FlowDesigner() {
           </Card>
         </Col>
 
-        <Col span={18}>
+        <Col xs={24} lg={18}>
           {draft ? (
             <Space direction="vertical" size={14} style={{ width: '100%' }}>
               <Card size="small" title="模板信息">
@@ -417,7 +417,7 @@ export default function FlowDesigner() {
                         <Input />
                       </Form.Item>
                     </Col>
-                    <Col span={6}>
+                    <Col xs={24} lg={6}>
                       <Form.Item name="type" label="流程类型" rules={[{ required: true }]}>
                         <Select options={FLOW_TYPE} />
                       </Form.Item>

@@ -32,30 +32,28 @@
   --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #000000;
-    --surface: #1c1c1e;
-    --surface-muted: #232325;
-    --glass: rgba(28, 28, 30, 0.72);
+[data-theme='dark'] {
+  --bg: #000000;
+  --surface: #1c1c1e;
+  --surface-muted: #232325;
+  --glass: rgba(28, 28, 30, 0.72);
 
-    --text-1: #f5f5f7;
-    --text-2: #a1a1a6;
-    --text-3: #8e8e93;
+  --text-1: #f5f5f7;
+  --text-2: #a1a1a6;
+  --text-3: #8e8e93;
 
-    --border: rgba(255, 255, 255, 0.09);
-    --border-strong: rgba(255, 255, 255, 0.18);
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.18);
 
-    --accent: #0a84ff;
-    --accent-soft: rgba(10, 132, 255, 0.16);
-    --danger: #ff453a;
-    --danger-soft: rgba(255, 69, 58, 0.12);
-    --success: #30d158;
-    --warning: #ff9f0a;
+  --accent: #0a84ff;
+  --accent-soft: rgba(10, 132, 255, 0.16);
+  --danger: #ff453a;
+  --danger-soft: rgba(255, 69, 58, 0.12);
+  --success: #30d158;
+  --warning: #ff9f0a;
 
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.4);
-    --shadow-md: 0 16px 48px rgba(0, 0, 0, 0.7);
-  }
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 16px 48px rgba(0, 0, 0, 0.7);
 }
 
 /* ============================================================
@@ -276,10 +274,8 @@ body {
   line-height: 1.6;
 }
 
-@media (prefers-color-scheme: dark) {
-  .vote-banner {
-    border-color: rgba(255, 69, 58, 0.25);
-  }
+[data-theme='dark'] .vote-banner {
+  border-color: rgba(255, 69, 58, 0.25);
 }
 
 /* ============================================================
@@ -445,4 +441,104 @@ body {
 
 .ant-tag {
   letter-spacing: 0;
+}
+
+/* ============================================================
+   响应式：平板 / 手机
+   ============================================================ */
+@media (max-width: 1180px) {
+  .page {
+    padding: 26px 24px 56px;
+  }
+}
+
+@media (max-width: 900px) {
+  .page {
+    padding: 20px 18px 52px;
+  }
+  .page-title {
+    font-size: 22px;
+  }
+  .stat-card {
+    padding: 16px 18px;
+  }
+  .stat-num {
+    font-size: 27px;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 16px 14px 48px;
+  }
+  .page-title {
+    font-size: 20px;
+    margin-bottom: 16px;
+  }
+
+  /* 登录：卡片铺满可用宽度，靠上摆放避免被键盘顶飞 */
+  .login-wrap {
+    align-items: flex-start;
+    padding: 10vh 16px 24px;
+  }
+  .login-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 30px 22px 22px;
+    border-radius: 20px;
+  }
+
+  /* 表格横向滚动而不是挤压列宽 */
+  .ant-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ant-table {
+    min-width: 0;
+  }
+
+  /* 触控目标不小于 44px */
+  .ant-btn {
+    min-height: 40px;
+  }
+  .ant-btn-sm {
+    min-height: 34px;
+  }
+  .ant-menu-item {
+    height: 44px !important;
+    line-height: 44px !important;
+  }
+  .ant-menu-item-group-title {
+    margin-top: 12px !important;
+  }
+
+  /* 表单标签与输入更紧凑 */
+  .ant-form-item {
+    margin-bottom: 16px;
+  }
+  .ant-card-body {
+    padding: 16px !important;
+  }
+  .ant-modal {
+    max-width: calc(100vw - 24px) !important;
+    margin: 12px auto !important;
+  }
+  .ant-drawer-content-wrapper {
+    max-width: 88vw;
+  }
+
+  .vote-banner {
+    font-size: 12.5px;
+    padding: 11px 14px;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .page {
+    padding: 14px 12px 44px;
+  }
+  .brand-text {
+    font-size: 15px;
+  }
 }

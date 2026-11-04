@@ -120,6 +120,20 @@ export class FlowService {
 
   async saveContentTemplate(dto: any) {
     if (!dto.code || !dto.name) throw new BadRequestException('模板编码与名称必填');
+
+    const fields = dto.schema?.fields;
+    if (!Array.isArray(fields) || !fields.length) {
+      throw new BadRequestException('内容模板至少需要一个字段');
+    }
+    const keys = new Set<string>();
+    for (const f of fields) {
+      if (!f.key?.trim() || !f.label?.trim()) {
+        throw new BadRequestException('每个字段都需要标识和名称');
+      }
+      if (keys.has(f.key)) throw new BadRequestException(`字段标识重复：${f.key}`);
+      keys.add(f.key);
+    }
+
     return this.prisma.contentTemplate.upsert({
       where: { code: dto.code },
       create: {

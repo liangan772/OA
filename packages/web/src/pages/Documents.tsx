@@ -93,6 +93,7 @@ export default function Documents() {
         <Table
           loading={loading}
           rowKey="id"
+          scroll={{ x: 720 }}
           dataSource={list}
           pagination={{ pageSize: 12, showSizeChanger: false }}
           onRow={(r) => ({ onClick: () => openDoc(r.id), style: { cursor: 'pointer' } })}

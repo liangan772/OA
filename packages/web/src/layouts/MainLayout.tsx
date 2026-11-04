@@ -1,17 +1,21 @@
-import { Avatar, Dropdown, Layout, Menu } from 'antd';
+import { useEffect, useState } from 'react';
+import { Avatar, Drawer, Dropdown, Layout, Menu } from 'antd';
 import {
   AppstoreOutlined,
   FileTextOutlined,
   MailOutlined,
   FormOutlined,
-  ApartmentOutlined,
   DeploymentUnitOutlined,
   PlusCircleOutlined,
   LogoutOutlined,
-  SettingOutlined,
+  MenuOutlined,
+  MoonOutlined,
+  SunOutlined,
 } from '@ant-design/icons';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../store/auth';
+import { useTheme } from '../store/theme';
+import { useIsMobile } from '../hooks/useMediaQuery';
 
 const { Header, Sider, Content } = Layout;
 
@@ -29,149 +33,230 @@ const items = [
       { key: '/collect', icon: <FormOutlined />, label: '收集表' },
     ],
   },
-  {
-    key: 'setting',
-    label: '组织与配置',
-    type: 'group' as const,
-    children: [
-      { key: '/org', icon: <ApartmentOutlined />, label: '编制管理' },
-      { key: '/design', icon: <SettingOutlined />, label: '流程设计' },
-    ],
-  },
 ];
+
+function Brand({ compact }: { compact?: boolean }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: compact ? 0 : '20px 22px 6px',
+      }}
+    >
+      <img src="/logo.png" alt="CROA" className="brand-logo" style={{ width: 32, height: 32 }} />
+      <div>
+        <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '0.04em', lineHeight: 1.3 }}>CROA</div>
+        <div style={{ fontSize: 11, color: 'var(--text-3)', letterSpacing: 0 }}>协同办公系统</div>
+      </div>
+    </div>
+  );
+}
 
 export default function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { resolved, setMode } = useTheme();
+  const isMobile = useIsMobile();
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const selected = location.pathname.startsWith('/flow/instance') ? '/flow/mine' : location.pathname;
 
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [location.pathname]);
+
+  const menu = (
+    <Menu
+      mode="inline"
+      selectedKeys={[selected]}
+      items={items}
+      onClick={(e) => navigate(e.key)}
+      style={{ borderInlineEnd: 'none', paddingTop: 4 }}
+    />
+  );
+
+  const userMenu = {
+    items: [
+      {
+        key: 'profile',
+        label: (
+          <div style={{ padding: '2px 0' }}>
+            <div style={{ fontWeight: 500 }}>{user?.name}</div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{user?.account}</div>
+          </div>
+        ),
+        disabled: true,
+      },
+      { type: 'divider' as const },
+      {
+        key: 'logout',
+        icon: <LogoutOutlined />,
+        label: '退出登录',
+        onClick: () => {
+          logout();
+          navigate('/login');
+        },
+      },
+    ],
+  };
+
   return (
     <Layout style={{ height: '100%' }}>
-      <Sider
-        width={248}
-        theme="light"
-        style={{ background: 'transparent', borderRight: 'none', paddingTop: 4 }}
-      >
-        <div style={{ padding: '20px 22px 6px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/logo.png" alt="CROA" className="brand-logo" style={{ width: 34, height: 34 }} />
-            <div>
-              <div
-                style={{
-                  fontSize: 15,
-                  fontWeight: 600,
-                  letterSpacing: '0.04em',
-                  lineHeight: 1.3,
-                }}
-              >
-                CROA
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text-3)', letterSpacing: 0 }}>协同办公系统</div>
-            </div>
-          </div>
-        </div>
+      {!isMobile && (
+        <Sider
+          width={248}
+          theme="light"
+          style={{ background: 'transparent', borderRight: 'none', paddingTop: 4 }}
+        >
+          <Brand />
+          {menu}
+        </Sider>
+      )}
 
-        <Menu
-          mode="inline"
-          selectedKeys={[selected]}
-          items={items}
-          onClick={(e) => navigate(e.key)}
-          style={{ borderInlineEnd: 'none', paddingTop: 4 }}
-        />
-      </Sider>
+      {isMobile && (
+        <Drawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          placement="left"
+          width={260}
+          closable={false}
+          styles={{ body: { padding: '20px 0 12px' }, header: { display: 'none' } }}
+        >
+          <div style={{ padding: '0 22px 12px' }}>
+            <Brand compact />
+          </div>
+          {menu}
+        </Drawer>
+      )}
 
       <Layout>
-        <Header
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            padding: 0,
-          }}
-        >
+        <Header style={{ display: 'flex', alignItems: 'center', padding: 0 }}>
           <div
             style={{
               maxWidth: 1440,
               width: '100%',
               margin: '0 auto',
-              padding: '0 36px',
+              padding: isMobile ? '0 10px' : '0 36px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
+              gap: 8,
             }}
           >
-            <div style={{ fontSize: 13, color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span>{user?.primaryOrgName || '未分配部门'}</span>
-              {user?.isLeader && (
-                <>
-                  <span style={{ color: 'var(--border-strong)' }}>·</span>
-                  <span style={{ color: 'var(--danger)', fontSize: 12.5 }}>负责人 · 一票否决</span>
-                </>
-              )}
-            </div>
-
-            <Dropdown
-              trigger={['click']}
-              menu={{
-                items: [
-                  {
-                    key: 'profile',
-                    label: (
-                      <div style={{ padding: '2px 0' }}>
-                        <div style={{ fontWeight: 500 }}>{user?.name}</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{user?.account}</div>
-                      </div>
-                    ),
-                    disabled: true,
-                  },
-                  { type: 'divider' },
-                  {
-                    key: 'logout',
-                    icon: <LogoutOutlined />,
-                    label: '退出登录',
-                    onClick: () => {
-                      logout();
-                      navigate('/login');
-                    },
-                  },
-                ],
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 9,
-                  cursor: 'pointer',
-                  padding: '5px 12px 5px 6px',
-                  borderRadius: 980,
-                  transition: 'background .2s var(--ease)',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(128,128,128,0.1)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-              >
-                <Avatar size={30} style={{ background: 'var(--accent)', fontSize: 13, fontWeight: 500, flex: 'none' }}>
-                  {user?.name?.slice(0, 1)}
-                </Avatar>
-                <span
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+              {isMobile && (
+                <button
+                  type="button"
+                  onClick={() => setDrawerOpen(true)}
+                  aria-label="打开菜单"
                   style={{
-                    fontSize: 13.5,
-                    fontWeight: 500,
-                    maxWidth: 96,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
+                    width: 44,
+                    height: 44,
+                    border: 'none',
+                    background: 'transparent',
+                    color: 'var(--text-1)',
+                    fontSize: 18,
+                    cursor: 'pointer',
+                    borderRadius: 10,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flex: 'none',
                   }}
                 >
-                  {user?.name}
+                  <MenuOutlined />
+                </button>
+              )}
+              <div
+                style={{
+                  fontSize: 13,
+                  color: 'var(--text-2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  overflow: 'hidden',
+                  whiteSpace: 'nowrap',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {user?.primaryOrgName || '未分配部门'}
                 </span>
+                {user?.isLeader && !isMobile && (
+                  <>
+                    <span style={{ color: 'var(--border-strong)' }}>·</span>
+                    <span style={{ color: 'var(--danger)', fontSize: 12.5 }}>负责人 · 一票否决</span>
+                  </>
+                )}
               </div>
-            </Dropdown>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <button
+                type="button"
+                aria-label="切换明暗"
+                onClick={() => setMode(resolved === 'dark' ? 'light' : 'dark')}
+                style={{
+                  width: 44,
+                  height: 44,
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--text-2)',
+                  cursor: 'pointer',
+                  borderRadius: 10,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 15,
+                }}
+              >
+                {resolved === 'dark' ? <SunOutlined /> : <MoonOutlined />}
+              </button>
+
+              <Dropdown trigger={['click']} menu={userMenu}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 9,
+                    cursor: 'pointer',
+                    padding: '4px 8px 4px 4px',
+                    borderRadius: 980,
+                    transition: 'background .2s var(--ease)',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(128,128,128,0.1)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <Avatar
+                    size={30}
+                    style={{ background: 'var(--accent)', fontSize: 13, fontWeight: 500, flex: 'none' }}
+                  >
+                    {user?.name?.slice(0, 1)}
+                  </Avatar>
+                  {!isMobile && (
+                    <span
+                      style={{
+                        fontSize: 13.5,
+                        fontWeight: 500,
+                        maxWidth: 96,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {user?.name}
+                    </span>
+                  )}
+                </div>
+              </Dropdown>
+            </div>
           </div>
         </Header>
 
-        <Content style={{ overflow: 'auto' }}>
+        <Content style={{ overflow: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <Outlet />
         </Content>
       </Layout>

@@ -266,10 +266,10 @@ async function main() {
 
   console.log('创建人员…');
   const hash = await bcrypt.hash('123456', 10);
-  const mkUser = (account: string, name: string, title: string) =>
-    prisma.user.create({ data: { account, name, title, passwordHash: hash } });
+  const mkUser = (account: string, name: string, title: string, role = 'USER') =>
+    prisma.user.create({ data: { account, name, title, passwordHash: hash, role } });
 
-  const uAdmin = await mkUser('admin', '系统管理员', '办公室主任');
+  const uAdmin = await mkUser('admin', '系统管理员', '办公室主任', 'ADMIN');
   const uZhang = await mkUser('zhang', '张明', '监督处处长');
   const uLi = await mkUser('li', '李强', '监督处科员');
   const uChen = await mkUser('chen', '陈静', '办公室副主任');

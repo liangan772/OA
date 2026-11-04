@@ -19,6 +19,8 @@ export interface UserInfo {
   account: string;
   name: string;
   title?: string;
+  role?: string;
+  isAdmin?: boolean;
   posts: PostInfo[];
   primaryOrgId: string | null;
   primaryOrgName: string | null;

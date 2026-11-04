@@ -155,6 +155,7 @@ export default function Collects() {
             <Table
               size="small"
               rowKey="id"
+              scroll={{ x: 600 }}
               pagination={{ pageSize: 10 }}
               dataSource={detail.responses}
               columns={[

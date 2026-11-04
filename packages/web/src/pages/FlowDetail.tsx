@@ -214,8 +214,8 @@ export default function FlowDetail() {
         </div>
       )}
 
-      <Row gutter={16} style={{ marginTop: 14 }}>
-        <Col span={15}>
+      <Row gutter={[16, 14]} style={{ marginTop: 14 }}>
+        <Col xs={24} lg={15}>
           <Card title="事项内容" size="small" style={{ marginBottom: 14 }}>
             {fields.length ? (
               fields
@@ -272,6 +272,7 @@ export default function FlowDetail() {
                     <Table
                       size="small"
                       style={{ marginTop: 8 }}
+                      scroll={{ x: 520 }}
                       pagination={false}
                       rowKey="id"
                       dataSource={ni.tasks}
@@ -302,7 +303,7 @@ export default function FlowDetail() {
           </Card>
         </Col>
 
-        <Col span={9}>
+        <Col xs={24} lg={9}>
           {myTask ? (
             <Card
               size="small"

@@ -153,7 +153,7 @@ export default function OrgManage() {
       <h2 className="page-title">编制管理</h2>
 
       <Row gutter={16}>
-        <Col span={7}>
+        <Col xs={24} lg={7}>
           <Card
             size="small"
             title={
@@ -182,7 +182,7 @@ export default function OrgManage() {
           </Card>
         </Col>
 
-        <Col span={17}>
+        <Col xs={24} lg={17}>
           {selected ? (
             <Card
               size="small"
@@ -218,6 +218,7 @@ export default function OrgManage() {
                         size="small"
                         rowKey="id"
                         pagination={false}
+                        scroll={{ x: 680 }}
                         dataSource={selected.positions}
                         columns={[
                           { title: '编制名称', dataIndex: 'name' },

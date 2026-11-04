@@ -5,10 +5,11 @@ import { AuthModule } from './modules/auth/auth.module';
 import { OrgModule } from './modules/org/org.module';
 import { FlowModule } from './modules/flow/flow.module';
 import { BizModule } from './modules/biz/biz.module';
+import { AdminModule } from './modules/admin/admin.module';
 import { HealthController } from './modules/health/health.controller';
 
 @Module({
-  imports: [PrismaModule, RedisModule, AuthModule, OrgModule, FlowModule, BizModule],
+  imports: [PrismaModule, RedisModule, AuthModule, OrgModule, FlowModule, BizModule, AdminModule],
   controllers: [HealthController],
 })
 export class AppModule {}

@@ -76,13 +76,13 @@ export default function FlowStart() {
       <h2 className="page-title">发起流程</h2>
 
       <Row gutter={16}>
-        <Col span={selected ? 9 : 24}>
+        <Col xs={24} lg={selected ? 9 : 24}>
           <Row gutter={[12, 12]}>
             {defs.map((d) => {
               const t = FLOW_TYPE[d.type] || { label: d.type, color: 'default' };
               const active = selected?.id === d.id;
               return (
-                <Col span={selected ? 24 : 8} key={d.id}>
+                <Col xs={24} sm={12} lg={selected ? 24 : 8} key={d.id}>
                   <Card
                     hoverable
                     size="small"
@@ -138,7 +138,7 @@ export default function FlowStart() {
         </Col>
 
         {selected && (
-          <Col span={15}>
+          <Col xs={24} lg={15}>
             <Card
               title={`填写：${selected.name}`}
               extra={

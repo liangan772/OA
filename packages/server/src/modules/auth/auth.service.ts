@@ -58,6 +58,8 @@ export class AuthService {
       name: user.name,
       phone: user.phone,
       title: user.title,
+      role: user.role,
+      isAdmin: user.role === 'ADMIN',
       posts,
       primaryOrgId: primary?.orgId ?? null,
       primaryOrgName: primary?.orgName ?? null,

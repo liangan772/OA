@@ -77,7 +77,7 @@ export default function Workbench() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 22 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14, marginBottom: 22 }}>
         {meter('待我处理', todo.length, 'var(--accent)')}
         {meter('我发起 · 进行中', runningMine.length, 'var(--warning)')}
         {meter('我已处理', done.length, 'var(--success)')}
