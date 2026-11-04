@@ -67,6 +67,7 @@ export class FlowService {
     }
 
     if (Array.isArray(dto.nodes)) {
+      this.validateGraph(dto.nodes);
       await this.prisma.flowDefNode.createMany({
         data: dto.nodes.map((n: any, i: number) => ({
           definitionId: def.id,
@@ -81,6 +82,40 @@ export class FlowService {
     }
 
     return this.definition(def.id);
+  }
+
+  /**
+   * 节点编排不做任何「类型必须按固定顺序」的约束，
+   * 只保证图画得通：key 唯一、后继存在、无自环、无孤儿分支。
+   */
+  private validateGraph(nodes: any[]) {
+    if (!nodes.length) throw new BadRequestException('流程至少需要一个节点');
+
+    const keys = new Set<string>();
+    for (const n of nodes) {
+      if (!n.nodeKey?.trim()) throw new BadRequestException('节点标识不能为空');
+      if (keys.has(n.nodeKey)) throw new BadRequestException(`节点标识重复：${n.nodeKey}`);
+      keys.add(n.nodeKey);
+    }
+
+    for (const n of nodes) {
+      if (n.nextNodeKey && !keys.has(n.nextNodeKey)) {
+        throw new BadRequestException(`节点「${n.name}」的后继指向不存在的节点：${n.nextNodeKey}`);
+      }
+      if (n.nextNodeKey === n.nodeKey) {
+        throw new BadRequestException(`节点「${n.name}」不能指向自己`);
+      }
+      const branches = n.config?.branches;
+      if (branches && typeof branches === 'object') {
+        for (const [code, target] of Object.entries(branches)) {
+          if (target && !keys.has(String(target))) {
+            throw new BadRequestException(
+              `节点「${n.name}」的分支 ${code} 指向不存在的节点：${target}`,
+            );
+          }
+        }
+      }
+    }
   }
 
   async saveContentTemplate(dto: any) {
@@ -121,7 +156,8 @@ export class FlowService {
 
     const def = await this.prisma.flowDefinition.findUnique({ where: { code: dto.definitionCode } });
     if (!def) throw new NotFoundException('流程模板不存在');
-    if (def.status !== 'PUBLISHED') throw new BadRequestException('该流程模板尚未发布');
+    // 控制台允许直接试跑未发布的模板，只有归档模板不可发起
+    if (def.status === 'ARCHIVED') throw new BadRequestException('该流程模板已归档，不能发起');
 
     return this.engine.startInstance({
       definitionCode: dto.definitionCode,

@@ -219,6 +219,13 @@ body {
   flex: none;
 }
 
+.brand-logo {
+  object-fit: contain;
+  flex: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
 .brand-text {
   font-size: 17px;
   font-weight: 600;

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { App as AntApp, Button, Card, Col, Empty, Form, Input, Row, Space, Tag, Typography } from 'antd';
+import { App as AntApp, Button, Card, Col, Empty, Form, Input, Row, Select, Space, Tag, Typography } from 'antd';
 import { ArrowRightOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api, { errMsg } from '../api/client';
 import { renderFieldInput, FieldDef } from '../components/DynamicForm';
+import { useAuth } from '../store/auth';
 
 const { Text } = Typography;
 
@@ -25,15 +26,26 @@ const NODE_COLOR: Record<string, string> = {
 
 export default function FlowStart() {
   const [defs, setDefs] = useState<any[]>([]);
+  const [orgs, setOrgs] = useState<any[]>([]);
   const [selected, setSelected] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm();
   const { message } = AntApp.useApp();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const { user } = useAuth();
 
   useEffect(() => {
-    api.get('/flow/definitions').then((r) => {
-      setDefs(r.data.filter((d: any) => d.status === 'PUBLISHED' && d.startRule?.mode !== 'AUTO_ON_REPORT'));
+    Promise.all([api.get('/flow/definitions'), api.get('/org/list')]).then(([d, o]) => {
+      // 只排除已归档模板；审批、公示等流程同样可以在控制台直接发起
+      const list = d.data.filter((x: any) => x.status !== 'ARCHIVED');
+      setDefs(list);
+      setOrgs(o.data);
+      const code = params.get('code');
+      if (code) {
+        const hit = list.find((x: any) => x.code === code);
+        if (hit) setSelected(hit);
+      }
     });
   }, []);
 
@@ -43,10 +55,12 @@ export default function FlowStart() {
     const values = await form.validateFields();
     setSubmitting(true);
     try {
+      const { title, orgId, ...formData } = values;
       const { data } = await api.post('/flow/start', {
         definitionCode: selected.code,
-        title: values.title || `${selected.name}-${new Date().toLocaleDateString('zh-CN')}`,
-        formData: values,
+        title: title || `${selected.name}-${new Date().toLocaleDateString('zh-CN')}`,
+        orgId,
+        formData,
       });
       message.success('流程已发起');
       navigate(`/flow/instance/${data.id}`);
@@ -133,9 +147,25 @@ export default function FlowStart() {
                 </Button>
               }
             >
-              <Form form={form} layout="vertical" requiredMark>
+              <Form form={form} layout="vertical" requiredMark initialValues={{ orgId: user?.primaryOrgId }}>
                 <Form.Item name="title" label="事项标题" rules={[{ required: true, message: '请填写事项标题' }]}>
                   <Input placeholder="一句话概括本次事项" />
+                </Form.Item>
+
+                <Form.Item
+                  name="orgId"
+                  label="发起组织"
+                  extra="默认以你所在部门发起；控制台可直接指定任意单位或部门"
+                >
+                  <Select
+                    showSearch
+                    optionFilterProp="label"
+                    placeholder="选择发起组织"
+                    options={orgs.map((o: any) => ({
+                      label: `${o.name}${o.type === 'UNIT' ? '（单位）' : ''}`,
+                      value: o.id,
+                    }))}
+                  />
                 </Form.Item>
 
                 {fields.filter((f) => f.key !== 'title').map((f) => (

@@ -10,20 +10,21 @@ export class ReturnHandler implements NodeHandler {
   async enter(ctx: HandlerContext): Promise<StepOutcome> {
     const { prisma, instance, nodeInstance } = ctx;
 
-    if (!instance.parentInstanceId) {
-      throw new Error('返回节点只能用于由上报产生的流程实例');
-    }
-
     const sum = await prisma.nodeInstance.findFirst({
       where: { instanceId: instance.id, nodeType: 'SUMMARIZE', status: 'DONE' },
       orderBy: { startedAt: 'desc' },
     });
-    const reason: string = (sum?.result as any)?.summary || '上级审批未通过，请修改后重新上报';
+    const reason: string = (sum?.result as any)?.summary || '审批未通过，需修改后重新提交';
 
     await prisma.nodeInstance.update({
       where: { id: nodeInstance.id },
       data: { result: { reason, returnedAt: new Date().toISOString() } },
     });
+
+    // 独立发起的流程没有下级可回传，本节点即作为流程终点
+    if (!instance.parentInstanceId) {
+      return { status: 'DONE', outcome: 'RETURNED', data: { reason, standalone: true } };
+    }
 
     return { status: 'DONE', outcome: 'RETURNED', data: { reason } };
   }

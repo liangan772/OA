@@ -55,8 +55,8 @@ export default function MainLayout() {
         style={{ background: 'transparent', borderRight: 'none', paddingTop: 4 }}
       >
         <div style={{ padding: '20px 22px 6px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-            <div className="brand-mark">C</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <img src="/logo.png" alt="CROA" className="brand-logo" style={{ width: 34, height: 34 }} />
             <div>
               <div
                 style={{
