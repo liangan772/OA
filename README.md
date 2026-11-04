@@ -57,30 +57,22 @@
 
 ## 快速开始
 
-### 方式一：Docker Compose（推荐）
+### 方式一：Docker Compose（推荐生产）
 
 ```bash
 git clone https://github.com/liangan772/OA.git
 cd OA
 
-# 可选：修改默认密码
-export POSTGRES_PASSWORD=your-strong-password
-export JWT_SECRET=your-jwt-secret
+cp .env.example .env       # 修改 POSTGRES_PASSWORD 与 JWT_SECRET
+docker compose -f docker-compose.prod.yml up -d --build
 
-docker compose up -d --build
-
-# 首次需要灌入演示数据
-docker compose exec server npx ts-node prisma/seed.ts
+# 首次灌入演示数据（干净上线可跳过，见部署文档）
+docker compose -f docker-compose.prod.yml exec server npx ts-node prisma/seed.ts
 ```
 
-访问 `http://localhost:8080`。
+访问 `http://localhost:8080`。生产配置只对外暴露 Web 端口，数据库与后端不进公网。
 
-| 服务 | 端口 |
-|---|---|
-| Web（Nginx） | 8080 |
-| API | 3001 |
-| PostgreSQL | 5432 |
-| Redis | 6379 |
+> 完整的部署步骤、备份恢复、升级回滚、故障排查见 **[部署文档](docs/部署文档.md)**。
 
 ### 方式二：本地开发
 

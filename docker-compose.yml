@@ -4,16 +4,16 @@ services:
     container_name: croa-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: oooa
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-oooa}
-      POSTGRES_DB: oooa
+      POSTGRES_USER: croa
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-croa}
+      POSTGRES_DB: croa
       TZ: Asia/Shanghai
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
       - '${POSTGRES_PORT:-5432}:5432'
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U oooa -d oooa']
+      test: ['CMD-SHELL', 'pg_isready -U croa -d croa']
       interval: 5s
       timeout: 3s
       retries: 12
@@ -41,7 +41,7 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://oooa:${POSTGRES_PASSWORD:-oooa}@postgres:5432/oooa?schema=public
+      DATABASE_URL: postgresql://croa:${POSTGRES_PASSWORD:-croa}@postgres:5432/croa?schema=public
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-please-change-this-in-production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
