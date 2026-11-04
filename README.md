@@ -87,6 +87,9 @@ docker compose exec server npx ts-node prisma/seed.ts
 ```bash
 npm run install:all          # 安装前后端依赖
 
+# 准备环境变量（仓库不提交 .env）
+cp packages/server/.env.example packages/server/.env
+
 # 启动内嵌 PostgreSQL（无需 Docker，端口 55432），保持窗口不关
 npm --prefix packages/server run db:dev
 
