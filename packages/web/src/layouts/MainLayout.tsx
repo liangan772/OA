@@ -189,7 +189,7 @@ export default function MainLayout() {
         </Drawer>
       )}
 
-      <Layout>
+      <div className="content-shell">
         <Header style={{ display: 'flex', alignItems: 'center', padding: 0 }}>
           <div
             style={{
@@ -316,7 +316,7 @@ export default function MainLayout() {
         <Content style={{ overflow: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <Outlet />
         </Content>
-      </Layout>
+      </div>
     </Layout>
   );
 }

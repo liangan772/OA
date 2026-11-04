@@ -351,11 +351,33 @@ body {
   background: var(--bg);
 }
 
+/* 内容区做成浮起的圆角面板：侧栏留在面板外的底色上，
+   两者不再直接拼出直角接缝 */
+.content-shell {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  margin: 10px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
 .ant-layout-header {
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
-  background: var(--glass) !important;
+  background: transparent !important;
   border-bottom: 1px solid var(--border);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+@media (max-width: 900px) {
+  .content-shell {
+    margin: 8px;
+    border-radius: 14px;
+  }
 }
 
 .ant-layout-sider {
