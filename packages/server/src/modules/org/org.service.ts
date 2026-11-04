@@ -483,20 +483,33 @@ export class OrgService {
     password?: string;
     phone?: string;
     title?: string;
+    role?: string;
   }) {
-    const exists = await this.prisma.user.findUnique({ where: { account: dto.account } });
-    if (exists) throw new BadRequestException(`账号 ${dto.account} 已存在`);
-    const user = await this.prisma.user.create({
+    const account = (dto.account || '').trim();
+    const name = (dto.name || '').trim();
+    if (!account || !name) throw new BadRequestException('账号与姓名必填');
+    if (!/^[a-zA-Z0-9_.-]{3,24}$/.test(account)) {
+      throw new BadRequestException('账号需为 3-24 位字母、数字、下划线、点或短横线');
+    }
+    if (dto.password && dto.password.length < 6) {
+      throw new BadRequestException('初始密码至少 6 位');
+    }
+    const role = dto.role === 'ADMIN' ? 'ADMIN' : 'USER';
+
+    const exists = await this.prisma.user.findUnique({ where: { account } });
+    if (exists) throw new BadRequestException(`账号 ${account} 已存在`);
+
+    return this.prisma.user.create({
       data: {
-        account: dto.account,
-        name: dto.name,
-        phone: dto.phone,
-        title: dto.title,
+        account,
+        name,
+        phone: dto.phone?.trim() || null,
+        title: dto.title?.trim() || null,
+        role,
         passwordHash: await bcrypt.hash(dto.password || '123456', 10),
       },
-      select: { id: true, account: true, name: true, phone: true, title: true, status: true },
+      select: { id: true, account: true, name: true, phone: true, title: true, role: true, status: true },
     });
-    return user;
   }
 
   async updateUser(id: string, dto: { name?: string; phone?: string; title?: string; status?: string; password?: string }) {
@@ -510,7 +523,7 @@ export class OrgService {
     return this.prisma.user.update({
       where: { id },
       data,
-      select: { id: true, account: true, name: true, phone: true, title: true, status: true },
+      select: { id: true, account: true, name: true, phone: true, title: true, role: true, status: true },
     });
   }
 }

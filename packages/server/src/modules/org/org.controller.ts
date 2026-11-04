@@ -12,6 +12,7 @@ import {
 import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { OrgService } from './org.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { AdminGuard } from '../../common/guards/admin.guard';
 
 class CreateOrgDto {
   @IsString() @IsNotEmpty() code: string;
@@ -45,6 +46,7 @@ class CreateUserDto {
   @IsOptional() @IsString() password?: string;
   @IsOptional() @IsString() phone?: string;
   @IsOptional() @IsString() title?: string;
+  @IsOptional() @IsString() role?: string;
 }
 
 @Controller('org')
@@ -146,11 +148,13 @@ export class OrgController {
   }
 
   @Post('user')
+  @UseGuards(AdminGuard)
   createUser(@Body() dto: CreateUserDto) {
     return this.org.createUser(dto);
   }
 
   @Patch('user/:id')
+  @UseGuards(AdminGuard)
   updateUser(@Param('id') id: string, @Body() dto: any) {
     return this.org.updateUser(id, dto);
   }

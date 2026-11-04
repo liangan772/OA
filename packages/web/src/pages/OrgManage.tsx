@@ -45,6 +45,9 @@ export default function OrgManage() {
   const [posModal, setPosModal] = useState(false);
   const [postModal, setPostModal] = useState<any>(null);
   const [types, setTypes] = useState<any[]>([]);
+  const [editingPos, setEditingPos] = useState<any>(null);
+  const [orgEditOpen, setOrgEditOpen] = useState(false);
+  const [orgEditForm] = Form.useForm();
   const [typeModal, setTypeModal] = useState(false);
   const [typeForm] = Form.useForm();
   const [form] = Form.useForm();
@@ -125,13 +128,44 @@ export default function OrgManage() {
     }
   };
 
-  const createPosition = async () => {
+  const openPosModal = (pos?: any) => {
+    setEditingPos(pos || null);
+    posForm.resetFields();
+    if (pos) posForm.setFieldsValue(pos);
+    setPosModal(true);
+  };
+
+  const savePosition = async () => {
     const v = await posForm.validateFields();
     try {
-      await api.post('/org/position', { ...v, orgId: selectedId });
-      message.success('已创建编制位');
+      if (editingPos) {
+        await api.patch(`/org/position/${editingPos.id}`, v);
+        message.success('编制位已更新');
+      } else {
+        await api.post('/org/position', { ...v, orgId: selectedId });
+        message.success('已创建编制位');
+      }
       setPosModal(false);
       posForm.resetFields();
+      setEditingPos(null);
+      load();
+    } catch (e) {
+      message.error(errMsg(e));
+    }
+  };
+
+  const openOrgEdit = () => {
+    if (!selected) return;
+    orgEditForm.setFieldsValue({ name: selected.name, sort: selected.sort ?? 0 });
+    setOrgEditOpen(true);
+  };
+
+  const saveOrgEdit = async () => {
+    const v = await orgEditForm.validateFields();
+    try {
+      await api.patch(`/org/${selectedId}`, v);
+      message.success('已保存');
+      setOrgEditOpen(false);
       load();
     } catch (e) {
       message.error(errMsg(e));
@@ -245,6 +279,9 @@ export default function OrgManage() {
                 <Space>
                   <span>{selected.name}</span>
                   <Tag color={typeColor(selected.type)}>{typeLabel(selected.type)}</Tag>
+                  <Button size="small" type="link" onClick={openOrgEdit} style={{ padding: 0 }}>
+                    编辑
+                  </Button>
                   <Text type="secondary" style={{ fontSize: 12 }}>
                     定编 {selected.positionCount} 人 · 在编 {selected.memberCount} 人
                   </Text>
@@ -255,7 +292,7 @@ export default function OrgManage() {
                   <Button size="small" icon={<PlusOutlined />} onClick={() => setOrgModal(true)}>
                     新增下级
                   </Button>
-                  <Button size="small" type="primary" icon={<TeamOutlined />} onClick={() => setPosModal(true)}>
+                  <Button size="small" type="primary" icon={<TeamOutlined />} onClick={() => openPosModal()}>
                     新增编制位
                   </Button>
                   <Popconfirm
@@ -321,6 +358,9 @@ export default function OrgManage() {
                                 <Button size="small" type="link" onClick={() => setPostModal(r)}>
                                   任职
                                 </Button>
+                                <Button size="small" type="link" onClick={() => openPosModal(r)}>
+                                  编辑
+                                </Button>
                                 <Button size="small" type="link" danger onClick={() => removePosition(r.id)}>
                                   删除
                                 </Button>
@@ -372,6 +412,25 @@ export default function OrgManage() {
           )}
         </Col>
       </Row>
+
+      <Modal
+        title={`编辑组织 · ${selected?.name || ''}`}
+        open={orgEditOpen}
+        onOk={saveOrgEdit}
+        onCancel={() => setOrgEditOpen(false)}
+        okText="保存"
+        destroyOnClose
+      >
+        <Form form={orgEditForm} layout="vertical" style={{ marginTop: 16 }}>
+          <Form.Item name="name" label="名称" rules={[{ required: true, message: '请输入名称' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="sort" label="排序" extra="数字越小越靠前">
+            <InputNumber min={0} max={999} style={{ width: '100%' }} />
+          </Form.Item>
+          <div className="muted">编码与类型创建后不可修改，如需调整层级请使用移动功能。</div>
+        </Form>
+      </Modal>
 
       <Modal
         title="组织类型"
@@ -488,13 +547,22 @@ export default function OrgManage() {
         </Form>
       </Modal>
 
-      <Modal title="新增编制位" open={posModal} onOk={createPosition} onCancel={() => setPosModal(false)} destroyOnClose>
+      <Modal
+        title={editingPos ? `编辑编制位 · ${editingPos.name}` : '新增编制位'}
+        open={posModal}
+        onOk={savePosition}
+        onCancel={() => {
+          setPosModal(false);
+          setEditingPos(null);
+        }}
+        destroyOnClose
+      >
         <Form form={posForm} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item name="name" label="编制名称" rules={[{ required: true, message: '请输入名称' }]}>
             <Input placeholder="如：办公室主任" />
           </Form.Item>
           <Form.Item name="code" label="编制编码" rules={[{ required: true, message: '请输入唯一编码' }]}>
-            <Input placeholder="如：P-OFFICE-01" />
+            <Input placeholder="如：P-OFFICE-01" disabled={!!editingPos} />
           </Form.Item>
           <Space size={24}>
             <Form.Item name="isLeader" label="正职负责人" valuePropName="checked" initialValue={false}>
