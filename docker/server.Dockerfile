@@ -12,8 +12,11 @@ COPY packages/server/package.json packages/server/package-lock.json ./
 # 先放 prisma schema，@prisma/client 的 postinstall 才能正确生成
 COPY packages/server/prisma ./prisma
 
-# 不能加 --omit=optional：平台相关的引擎包在 optionalDependencies 里
-RUN npm ci --no-audit --no-fund && npx prisma generate
+RUN npm ci --no-audit --no-fund
+
+# generate 不连库，但 schema 里的 env("DATABASE_URL") 需要可解析
+ENV DATABASE_URL="postgresql://build:build@localhost:5432/build?schema=public"
+RUN npx prisma generate
 
 COPY packages/server/tsconfig.json packages/server/nest-cli.json ./
 COPY packages/server/src ./src
