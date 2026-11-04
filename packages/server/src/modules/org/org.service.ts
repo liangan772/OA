@@ -432,20 +432,34 @@ export class OrgService {
     if (!user) throw new NotFoundException('人员不存在');
     if (!position) throw new NotFoundException('编制位不存在');
 
-    const existing = await this.prisma.post.findFirst({
+    const active = await this.prisma.post.findFirst({
       where: { userId, positionId, endAt: null },
     });
-    if (existing) throw new BadRequestException('该人员已在此编制位任职');
+    if (active) throw new BadRequestException('该人员已在此编制位任职');
 
     const occupied = position.posts.length;
     const overStaffed = occupied >= position.headcount;
 
-    if (isPrimary) {
-      // 主岗唯一：解除该用户其他主岗
-      await this.prisma.post.updateMany({ where: { userId, isPrimary: true }, data: { isPrimary: false } });
-    }
+    // (userId, positionId) 唯一：曾经免职的记录直接复活，否则会撞唯一约束
+    const history = await this.prisma.post.findFirst({ where: { userId, positionId } });
 
-    const post = await this.prisma.post.create({ data: { userId, positionId, isPrimary } });
+    const post = await this.prisma.$transaction(async (tx) => {
+      const saved = history
+        ? await tx.post.update({
+            where: { id: history.id },
+            data: { endAt: null, startAt: new Date(), isPrimary },
+          })
+        : await tx.post.create({ data: { userId, positionId, isPrimary } });
+
+      if (isPrimary) {
+        // 主岗唯一：解除该用户其他在任主岗
+        await tx.post.updateMany({
+          where: { userId, isPrimary: true, endAt: null, id: { not: saved.id } },
+          data: { isPrimary: false },
+        });
+      }
+      return saved;
+    });
     return {
       post,
       warning: overStaffed ? `该编制位定编 ${position.headcount} 人，当前已配 ${occupied} 人，本次任职后超编` : null,
