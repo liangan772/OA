@@ -13,6 +13,7 @@ import FlowDesigner from './pages/FlowDesigner';
 import Documents from './pages/Documents';
 import Mails from './pages/Mails';
 import Collects from './pages/Collects';
+import Profile from './pages/Profile';
 import AdminOverview from './pages/admin/AdminOverview';
 import AdminTemplates from './pages/admin/AdminTemplates';
 import AdminGrants from './pages/admin/AdminGrants';
@@ -54,6 +55,7 @@ export default function App() {
         <Route path="/doc" element={<Documents />} />
         <Route path="/mail" element={<Mails />} />
         <Route path="/collect" element={<Collects />} />
+        <Route path="/profile" element={<Profile />} />
       </Route>
 
       {/* 后台：不出现在任何菜单，只能通过 /admin 直接进入 */}

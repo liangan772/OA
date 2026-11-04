@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
 import { IsNotEmpty, IsString, MinLength } from 'class-validator';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -37,6 +37,15 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   profile(@CurrentUser('id') userId: string) {
     return this.auth.profile(userId);
+  }
+
+  @Patch('profile')
+  @UseGuards(JwtAuthGuard)
+  updateProfile(
+    @CurrentUser('id') userId: string,
+    @Body() dto: { name?: string; phone?: string; title?: string },
+  ) {
+    return this.auth.updateProfile(userId, dto);
   }
 
   @Post('change-password')

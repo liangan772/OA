@@ -81,4 +81,35 @@ export class AuthService {
     });
     return { success: true };
   }
+
+  /** 个人资料修改：只允许改姓名、手机号、职务；账号与角色不可自改 */
+  async updateProfile(userId: string, dto: { name?: string; phone?: string; title?: string }) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new BadRequestException('用户不存在');
+
+    const data: Record<string, any> = {};
+    if (dto.name !== undefined) {
+      const name = dto.name.trim();
+      if (!name) throw new BadRequestException('姓名不能为空');
+      if (name.length > 32) throw new BadRequestException('姓名过长');
+      data.name = name;
+    }
+    if (dto.phone !== undefined) {
+      const phone = dto.phone.trim();
+      if (phone && !/^[0-9+\-\s()]{5,20}$/.test(phone)) {
+        throw new BadRequestException('手机号格式不正确');
+      }
+      data.phone = phone || null;
+    }
+    if (dto.title !== undefined) {
+      const title = dto.title.trim();
+      if (title.length > 32) throw new BadRequestException('职务过长');
+      data.title = title || null;
+    }
+
+    if (!Object.keys(data).length) throw new BadRequestException('没有需要更新的内容');
+
+    await this.prisma.user.update({ where: { id: userId }, data });
+    return this.profile(userId);
+  }
 }

@@ -108,15 +108,25 @@ export class OrgService {
     sort?: number;
     remark?: string;
   }) {
-    const exists = await this.prisma.org.findUnique({ where: { code: dto.code } });
-    if (exists) throw new BadRequestException(`组织编码 ${dto.code} 已存在`);
+    // 前端 TreeSelect 清空时可能传空串，必须归一化成 null，
+    // 否则 '' 会被写进 parentId，触发外键约束失败
+    const code = (dto.code || '').trim();
+    const name = (dto.name || '').trim();
+    const type = (dto.type || '').trim();
+    const parentId = (dto.parentId || '').trim() || null;
 
-    const parent = dto.parentId
-      ? await this.prisma.org.findUnique({ where: { id: dto.parentId } })
-      : null;
-    if (dto.parentId && !parent) throw new NotFoundException('上级组织不存在');
+    if (!code || !name) throw new BadRequestException('组织编码与名称必填');
+    if (!['UNIT', 'DEPARTMENT', 'SECTION'].includes(type)) {
+      throw new BadRequestException(`组织类型不合法：${type}`);
+    }
 
-    if (dto.type === 'UNIT') {
+    const exists = await this.prisma.org.findUnique({ where: { code } });
+    if (exists) throw new BadRequestException(`组织编码 ${code} 已存在`);
+
+    const parent = parentId ? await this.prisma.org.findUnique({ where: { id: parentId } }) : null;
+    if (parentId && !parent) throw new NotFoundException('上级组织不存在');
+
+    if (type === 'UNIT') {
       if (parent && parent.type !== 'UNIT') {
         throw new BadRequestException('单位的上级只能是单位');
       }
@@ -127,10 +137,10 @@ export class OrgService {
     return this.prisma.$transaction(async (tx) => {
       const created = await tx.org.create({
         data: {
-          code: dto.code,
-          name: dto.name,
-          type: dto.type,
-          parentId: dto.parentId ?? null,
+          code,
+          name,
+          type,
+          parentId,
           rootUnitId: parent ? parent.rootUnitId : '',
           path: '',
           level: parent ? parent.level + 1 : 1,
@@ -138,7 +148,7 @@ export class OrgService {
         },
       });
       // 单位自身就是 rootUnit；部门则继承所属单位
-      const rootUnitId = dto.type === 'UNIT' ? created.id : parent!.rootUnitId;
+      const rootUnitId = type === 'UNIT' ? created.id : parent!.rootUnitId;
       const path = parent ? `${parent.path}${created.id}/` : `/${created.id}/`;
       return tx.org.update({ where: { id: created.id }, data: { rootUnitId, path } });
     });
@@ -151,7 +161,8 @@ export class OrgService {
   }
 
   /** 移动节点：重算自身与全部后代的 path / level / rootUnitId */
-  async move(id: string, newParentId: string | null) {
+  async move(id: string, rawParentId: string | null) {
+    const newParentId = (rawParentId || '').trim() || null;
     const org = await this.prisma.org.findUnique({ where: { id } });
     if (!org) throw new NotFoundException('组织不存在');
     if (newParentId === id) throw new BadRequestException('不能移动到自己下面');

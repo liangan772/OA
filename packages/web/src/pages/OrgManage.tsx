@@ -93,7 +93,8 @@ export default function OrgManage() {
   const createOrg = async () => {
     const v = await form.validateFields();
     try {
-      await api.post('/org', v);
+      // TreeSelect 清空时可能给空串，统一转成 undefined，避免后端写入非法的 parentId
+      await api.post('/org', { ...v, parentId: v.parentId || undefined });
       message.success('已创建');
       setOrgModal(false);
       form.resetFields();
@@ -309,7 +310,7 @@ export default function OrgManage() {
 
       <Modal title="新增组织" open={orgModal} onOk={createOrg} onCancel={() => setOrgModal(false)} destroyOnClose>
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item name="parentId" label="上级组织" initialValue={selectedId}>
+          <Form.Item name="parentId" label="上级组织" initialValue={selectedId || undefined}>
             <TreeSelect treeData={treeSelectData} allowClear placeholder="留空则创建顶级单位" treeDefaultExpandAll />
           </Form.Item>
           <Form.Item name="name" label="名称" rules={[{ required: true, message: '请输入名称' }]}>

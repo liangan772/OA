@@ -11,16 +11,27 @@ import {
   MenuOutlined,
   MoonOutlined,
   SunOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../store/auth';
 import { useTheme } from '../store/theme';
 import { useIsMobile } from '../hooks/useMediaQuery';
+import api from '../api/client';
 
 const { Header, Sider, Content } = Layout;
 
-const items = [
-  { key: '/', icon: <AppstoreOutlined />, label: '工作台' },
+const buildItems = (todoCount: number) => [
+  {
+    key: '/',
+    icon: <AppstoreOutlined />,
+    label: (
+      <span style={{ display: 'flex', alignItems: 'center' }}>
+        工作台
+        {todoCount > 0 && <span className="menu-badge">{todoCount > 99 ? '99+' : todoCount}</span>}
+      </span>
+    ),
+  },
   { key: '/flow/start', icon: <PlusCircleOutlined />, label: '发起流程' },
   { key: '/flow/mine', icon: <DeploymentUnitOutlined />, label: '我发起的' },
   {
@@ -54,6 +65,27 @@ function Brand({ compact }: { compact?: boolean }) {
   );
 }
 
+function SideFoot() {
+  return (
+    <div style={{ padding: '14px 22px 18px' }}>
+      <div
+        style={{
+          borderTop: '1px solid var(--border)',
+          paddingTop: 12,
+          fontSize: 11,
+          color: 'var(--text-3)',
+          letterSpacing: 0,
+          display: 'flex',
+          justifyContent: 'space-between',
+        }}
+      >
+        <span>v0.1.0</span>
+        <span>CROA</span>
+      </div>
+    </div>
+  );
+}
+
 export default function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -61,6 +93,7 @@ export default function MainLayout() {
   const { resolved, setMode } = useTheme();
   const isMobile = useIsMobile();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [todoCount, setTodoCount] = useState(0);
 
   const selected = location.pathname.startsWith('/flow/instance') ? '/flow/mine' : location.pathname;
 
@@ -68,11 +101,18 @@ export default function MainLayout() {
     setDrawerOpen(false);
   }, [location.pathname]);
 
+  useEffect(() => {
+    api
+      .get('/flow/todo')
+      .then((r) => setTodoCount(r.data.length))
+      .catch(() => setTodoCount(0));
+  }, [location.pathname]);
+
   const menu = (
     <Menu
       mode="inline"
       selectedKeys={[selected]}
-      items={items}
+      items={buildItems(todoCount)}
       onClick={(e) => navigate(e.key)}
       style={{ borderInlineEnd: 'none', paddingTop: 4 }}
     />
@@ -81,7 +121,7 @@ export default function MainLayout() {
   const userMenu = {
     items: [
       {
-        key: 'profile',
+        key: 'profile-card',
         label: (
           <div style={{ padding: '2px 0' }}>
             <div style={{ fontWeight: 500 }}>{user?.name}</div>
@@ -91,6 +131,12 @@ export default function MainLayout() {
         disabled: true,
       },
       { type: 'divider' as const },
+      {
+        key: 'profile',
+        icon: <UserOutlined />,
+        label: '个人资料',
+        onClick: () => navigate('/profile'),
+      },
       {
         key: 'logout',
         icon: <LogoutOutlined />,
@@ -109,10 +155,17 @@ export default function MainLayout() {
         <Sider
           width={248}
           theme="light"
-          style={{ background: 'transparent', borderRight: 'none', paddingTop: 4 }}
+          style={{
+            background: 'transparent',
+            borderRight: 'none',
+            paddingTop: 4,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
         >
           <Brand />
-          {menu}
+          <div style={{ flex: 1 }}>{menu}</div>
+          <SideFoot />
         </Sider>
       )}
 
@@ -123,12 +176,16 @@ export default function MainLayout() {
           placement="left"
           width={260}
           closable={false}
-          styles={{ body: { padding: '20px 0 12px' }, header: { display: 'none' } }}
+          styles={{
+            body: { padding: '20px 0 12px', display: 'flex', flexDirection: 'column' },
+            header: { display: 'none' },
+          }}
         >
           <div style={{ padding: '0 22px 12px' }}>
             <Brand compact />
           </div>
-          {menu}
+          <div style={{ flex: 1 }}>{menu}</div>
+          <SideFoot />
         </Drawer>
       )}
 
