@@ -386,9 +386,13 @@ export default function FlowDesigner() {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontWeight: 500, fontSize: 13 }}>{d.name}</span>
-                    {d.status === 'DRAFT' && (
-                      <Tag bordered={false} style={{ marginInlineEnd: 0, fontSize: 11 }}>
-                        草稿
+                    {d.status !== 'PUBLISHED' && (
+                      <Tag
+                        color={d.status === 'ARCHIVED' ? 'default' : 'orange'}
+                        bordered={false}
+                        style={{ marginInlineEnd: 0, fontSize: 11 }}
+                      >
+                        {d.status === 'ARCHIVED' ? '已归档' : '草稿'}
                       </Tag>
                     )}
                   </div>
@@ -729,7 +733,7 @@ function InsertBar({
 
   return (
     <div
-      style={{ height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      style={{ height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
@@ -748,7 +752,20 @@ function InsertBar({
           options={nodeDefs.map((n) => ({ label: n.name, value: n.type }))}
         />
       ) : (
-        <PlusOutlined style={{ color: 'var(--text-3)', fontSize: 11, opacity: 0.5 }} />
+        <div
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            color: 'var(--text-3)',
+            opacity: 0.45,
+          }}
+        >
+          <div style={{ flex: 1, height: 1, background: 'repeating-linear-gradient(to right, var(--border-strong) 0 3px, transparent 3px 7px)' }} />
+          <PlusOutlined style={{ fontSize: 10 }} />
+          <div style={{ flex: 1, height: 1, background: 'repeating-linear-gradient(to right, var(--border-strong) 0 3px, transparent 3px 7px)' }} />
+        </div>
       )}
     </div>
   );
