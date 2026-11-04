@@ -34,15 +34,6 @@ import api, { errMsg } from '../api/client';
 
 const { Text } = Typography;
 
-const NODE_COLOR: Record<string, string> = {
-  VOTE: 'blue',
-  SUMMARIZE: 'purple',
-  REPORT: 'gold',
-  RETURN: 'red',
-  ASSIGN: 'cyan',
-  EXECUTE: 'green',
-};
-
 const FLOW_TYPE = [
   { label: '审议流程', value: 'DELIBERATE' },
   { label: '审批流程', value: 'APPROVE' },
@@ -121,6 +112,11 @@ export default function FlowDesigner() {
     nodeDefs.forEach((n) => m.set(n.type, n));
     return m;
   }, [nodeDefs]);
+
+  const enabledNodeDefs = useMemo(
+    () => nodeDefs.filter((n) => n.enabled !== false),
+    [nodeDefs],
+  );
 
   const nodeOptions = useMemo(
     () => (draft?.nodes || []).map((n: any) => ({ label: n.name, value: n.nodeKey })),
@@ -470,7 +466,7 @@ export default function FlowDesigner() {
                       style={{ width: 150 }}
                       value={null}
                       onChange={(v) => appendNode(v)}
-                      options={nodeDefs.map((n) => ({ label: n.name, value: n.type }))}
+                      options={enabledNodeDefs.map((n) => ({ label: n.name, value: n.type }))}
                     />
                   </Space>
                 }
@@ -499,7 +495,7 @@ export default function FlowDesigner() {
 
                 {draft.nodes.map((n: any, i: number) => (
                   <div key={n.nodeKey}>
-                    <InsertBar index={i} onInsert={insertNode} nodeDefs={nodeDefs} />
+                    <InsertBar index={i} onInsert={insertNode} nodeDefs={enabledNodeDefs} />
 
                     <div
                       style={{
@@ -511,7 +507,7 @@ export default function FlowDesigner() {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Tag color={NODE_COLOR[n.nodeType]} bordered={false} style={{ marginInlineEnd: 0 }}>
+                        <Tag color={nodeMeta.get(n.nodeType)?.color || 'blue'} bordered={false} style={{ marginInlineEnd: 0 }}>
                           {nodeMeta.get(n.nodeType)?.name || n.nodeType}
                         </Tag>
                         <Input
@@ -711,7 +707,7 @@ export default function FlowDesigner() {
             />
           </Form.Item>
           <Form.Item name="firstNodeType" label="首个节点" initialValue="VOTE">
-            <Select options={nodeDefs.map((n) => ({ label: `${n.name}（${n.type}）`, value: n.type }))} />
+            <Select options={enabledNodeDefs.map((n) => ({ label: `${n.name}（${n.type}）`, value: n.type }))} />
           </Form.Item>
         </Form>
       </Modal>

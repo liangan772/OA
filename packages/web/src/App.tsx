@@ -16,6 +16,7 @@ import Collects from './pages/Collects';
 import Profile from './pages/Profile';
 import AdminOverview from './pages/admin/AdminOverview';
 import AdminTemplates from './pages/admin/AdminTemplates';
+import AdminNodes from './pages/admin/AdminNodes';
 import AdminGrants from './pages/admin/AdminGrants';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminSettings from './pages/admin/AdminSettings';
@@ -63,6 +64,7 @@ export default function App() {
         <Route index element={<AdminOverview />} />
         <Route path="org" element={<OrgManage />} />
         <Route path="flow" element={<FlowDesigner />} />
+        <Route path="nodes" element={<AdminNodes />} />
         <Route path="templates" element={<AdminTemplates />} />
         <Route path="grants" element={<AdminGrants />} />
         <Route path="users" element={<AdminUsers />} />

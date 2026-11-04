@@ -134,6 +134,9 @@ model NodeDefinition {
   type          String   @unique // VOTE | SUMMARIZE | REPORT | RETURN | ASSIGN | EXECUTE
   name          String
   description   String?
+  color         String   @default("blue") // 标签颜色
+  sort          Int      @default(0)
+  enabled       Boolean  @default(true) // 停用后不出现在流程设计器的可选项里
   configSchema  Json
   defaultConfig Json
   version       Int      @default(1)

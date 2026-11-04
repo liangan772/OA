@@ -35,7 +35,57 @@ export class FlowService {
   }
 
   async nodeDefinitions() {
-    return this.prisma.nodeDefinition.findMany({ orderBy: { type: 'asc' } });
+    return this.prisma.nodeDefinition.findMany({ orderBy: [{ sort: 'asc' }, { type: 'asc' }] });
+  }
+
+  /** 后台配置节点：名称、描述、颜色、排序、启用状态与配置项定义 */
+  async updateNodeDefinition(type: string, dto: any) {
+    const def = await this.prisma.nodeDefinition.findUnique({ where: { type } });
+    if (!def) throw new NotFoundException(`节点类型不存在：${type}`);
+
+    const data: Record<string, any> = {};
+
+    if (dto.name !== undefined) {
+      const name = String(dto.name).trim();
+      if (!name) throw new BadRequestException('节点名称不能为空');
+      if (name.length > 24) throw new BadRequestException('节点名称不能超过 24 个字符');
+      data.name = name;
+    }
+    if (dto.description !== undefined) data.description = dto.description?.trim() || null;
+    if (dto.color !== undefined) data.color = String(dto.color);
+    if (dto.sort !== undefined && dto.sort !== null) data.sort = Number(dto.sort) || 0;
+
+    // 停用只影响「新建时能否选到」，存量模板与在途流程照常执行
+    if (dto.enabled !== undefined) data.enabled = !!dto.enabled;
+
+    if (dto.configSchema !== undefined) {
+      const schema = dto.configSchema;
+      if (!schema || !Array.isArray(schema.fields)) {
+        throw new BadRequestException('配置项定义必须是 { fields: [] } 结构');
+      }
+      const keys = new Set<string>();
+      for (const f of schema.fields) {
+        if (!f?.key || !f?.label || !f?.type) {
+          throw new BadRequestException('每个配置项都需要 key、label、type');
+        }
+        if (keys.has(f.key)) throw new BadRequestException(`配置项 key 重复：${f.key}`);
+        keys.add(f.key);
+      }
+      data.configSchema = schema;
+    }
+
+    if (dto.defaultConfig !== undefined) {
+      const dc = dto.defaultConfig;
+      if (typeof dc !== 'object' || Array.isArray(dc)) {
+        throw new BadRequestException('默认配置必须是对象');
+      }
+      data.defaultConfig = dc || {};
+    }
+
+    if (!Object.keys(data).length) throw new BadRequestException('没有需要更新的内容');
+
+    data.version = { increment: 1 };
+    return this.prisma.nodeDefinition.update({ where: { type }, data });
   }
 
   async contentTemplates() {

@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { FlowService } from './flow.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { AdminGuard } from '../../common/guards/admin.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @Controller('flow')
@@ -16,6 +17,12 @@ export class FlowController {
   @Get('nodes')
   nodes() {
     return this.flow.nodeDefinitions();
+  }
+
+  @Patch('nodes/:type')
+  @UseGuards(AdminGuard)
+  updateNode(@Param('type') type: string, @Body() dto: any) {
+    return this.flow.updateNodeDefinition(type, dto);
   }
 
   @Get('templates')
