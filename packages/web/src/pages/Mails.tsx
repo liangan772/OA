@@ -103,7 +103,7 @@ export default function Mails() {
                       extra={<Text type="secondary" style={{ fontSize: 12 }}>{dayjs(m.createdAt).format('MM-DD HH:mm')}</Text>}
                     >
                       <List.Item.Meta
-                        avatar={<MailOutlined style={{ color: m.read ? '#c9ced6' : '#185fa5', fontSize: 16 }} />}
+                        avatar={<MailOutlined style={{ color: m.read ? 'var(--text-3)' : 'var(--accent)', fontSize: 16 }} />}
                         title={
                           <Space size={8}>
                             <span style={{ fontWeight: m.read ? 400 : 500 }}>{m.subject}</span>

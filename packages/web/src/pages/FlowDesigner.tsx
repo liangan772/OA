@@ -170,8 +170,8 @@ export default function FlowDesigner() {
                     padding: '10px 12px',
                     borderRadius: 6,
                     cursor: 'pointer',
-                    background: activeId === d.id ? '#eef4fb' : '#fafbfc',
-                    border: `1px solid ${activeId === d.id ? '#185fa5' : '#eef0f3'}`,
+                    background: activeId === d.id ? '#eef4fb' : 'var(--surface-muted)',
+                    border: `1px solid ${activeId === d.id ? 'var(--accent)' : 'var(--border)'}`,
                   }}
                 >
                   <div style={{ fontWeight: 500, fontSize: 13 }}>{d.name}</div>
@@ -224,8 +224,8 @@ export default function FlowDesigner() {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          background: '#fafbfc',
-                          border: '1px solid #eef0f3',
+                          background: 'var(--surface-muted)',
+                          border: '1px solid var(--border)',
                           borderRadius: 6,
                           padding: '10px 14px',
                         }}
@@ -240,7 +240,7 @@ export default function FlowDesigner() {
                           <Text type="secondary" style={{ fontSize: 12 }}>
                             {n.nodeKey}
                           </Text>
-                          <ArrowRightOutlined style={{ color: '#c9ced6', fontSize: 11 }} />
+                          <ArrowRightOutlined style={{ color: 'var(--text-3)', fontSize: 11 }} />
                           <Text type="secondary" style={{ fontSize: 12 }}>
                             {n.nextNodeKey || '流程结束'}
                           </Text>
@@ -253,7 +253,7 @@ export default function FlowDesigner() {
                         </Space>
                       </div>
                       {i < draft.nodes.length - 1 && (
-                        <div style={{ height: 14, marginLeft: -16, borderLeft: '2px solid #e3e6ea' }} />
+                        <div style={{ height: 14, marginLeft: -16, borderLeft: '2px solid var(--border)' }} />
                       )}
                     </div>
                   ))}

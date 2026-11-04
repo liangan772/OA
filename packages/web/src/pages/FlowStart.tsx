@@ -77,16 +77,28 @@ export default function FlowStart() {
                       form.resetFields();
                     }}
                     style={{
-                      borderColor: active ? '#185fa5' : undefined,
-                      boxShadow: active ? '0 0 0 2px rgba(24,95,165,0.12)' : undefined,
+                      height: '100%',
+                      borderColor: active ? 'var(--accent)' : undefined,
+                      boxShadow: active ? '0 0 0 3px var(--accent-soft)' : undefined,
+                      transition: 'all .25s var(--ease)',
                     }}
-                    bodyStyle={{ padding: 16 }}
+                    bodyStyle={{ padding: 18 }}
                   >
                     <Space size={6} style={{ marginBottom: 6 }}>
                       <Text strong>{d.name}</Text>
-                      <Tag color={t.color}>{t.label}</Tag>
+                      <Tag color={t.color} bordered={false}>
+                        {t.label}
+                      </Tag>
                     </Space>
-                    <div style={{ fontSize: 12, color: '#8a9099', marginBottom: 10, minHeight: 34 }}>
+                    <div
+                      style={{
+                        fontSize: 12.5,
+                        color: 'var(--text-3)',
+                        marginBottom: 14,
+                        minHeight: 40,
+                        lineHeight: 1.6,
+                      }}
+                    >
                       {d.description}
                     </div>
                     <Space size={4} wrap style={{ fontSize: 12 }}>
@@ -95,7 +107,7 @@ export default function FlowStart() {
                           <Tag color={NODE_COLOR[n.nodeType]} style={{ marginInlineEnd: 0 }}>
                             {n.name}
                           </Tag>
-                          {i < d.nodes.length - 1 && <ArrowRightOutlined style={{ color: '#c9ced6', fontSize: 10 }} />}
+                          {i < d.nodes.length - 1 && <ArrowRightOutlined style={{ color: 'var(--text-3)', fontSize: 10 }} />}
                         </span>
                       ))}
                     </Space>

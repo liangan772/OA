@@ -18,7 +18,7 @@ async function bootstrap() {
 
   const port = Number(process.env.PORT) || 3001;
   await app.listen(port);
-  Logger.log(`OA server running at http://localhost:${port}/api`, 'Bootstrap');
+  Logger.log(`CROA server running at http://localhost:${port}/api`, 'Bootstrap');
 }
 
 bootstrap();

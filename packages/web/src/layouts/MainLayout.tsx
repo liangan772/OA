@@ -1,4 +1,4 @@
-import { Avatar, Dropdown, Layout, Menu, Tag } from 'antd';
+import { Avatar, Dropdown, Layout, Menu } from 'antd';
 import {
   AppstoreOutlined,
   FileTextOutlined,
@@ -8,7 +8,7 @@ import {
   DeploymentUnitOutlined,
   PlusCircleOutlined,
   LogoutOutlined,
-  UserOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../store/auth';
@@ -35,7 +35,7 @@ const items = [
     type: 'group' as const,
     children: [
       { key: '/org', icon: <ApartmentOutlined />, label: '编制管理' },
-      { key: '/design', icon: <DeploymentUnitOutlined />, label: '流程设计' },
+      { key: '/design', icon: <SettingOutlined />, label: '流程设计' },
     ],
   },
 ];
@@ -45,75 +45,130 @@ export default function MainLayout() {
   const location = useLocation();
   const { user, logout } = useAuth();
 
-  const selected = location.pathname.startsWith('/flow/instance')
-    ? '/flow/mine'
-    : location.pathname;
+  const selected = location.pathname.startsWith('/flow/instance') ? '/flow/mine' : location.pathname;
 
   return (
     <Layout style={{ height: '100%' }}>
-      <Sider width={216} theme="light" style={{ borderRight: '1px solid #eceff3' }}>
-        <div
-          style={{
-            height: 56,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            padding: '0 18px',
-            borderBottom: '1px solid #f2f4f7',
-          }}
-        >
-          <div className="brand-mark" style={{ width: 28, height: 28, fontSize: 13 }}>
-            协
+      <Sider
+        width={248}
+        theme="light"
+        style={{ background: 'transparent', borderRight: 'none', paddingTop: 4 }}
+      >
+        <div style={{ padding: '20px 22px 6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+            <div className="brand-mark">C</div>
+            <div>
+              <div
+                style={{
+                  fontSize: 15,
+                  fontWeight: 600,
+                  letterSpacing: '0.04em',
+                  lineHeight: 1.3,
+                }}
+              >
+                CROA
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', letterSpacing: 0 }}>协同办公系统</div>
+            </div>
           </div>
-          <span style={{ fontWeight: 500, fontSize: 15 }}>协同办公</span>
         </div>
+
         <Menu
           mode="inline"
           selectedKeys={[selected]}
           items={items}
           onClick={(e) => navigate(e.key)}
-          style={{ borderInlineEnd: 'none', paddingTop: 8 }}
+          style={{ borderInlineEnd: 'none', paddingTop: 4 }}
         />
       </Sider>
 
       <Layout>
         <Header
           style={{
-            height: 56,
-            lineHeight: '56px',
-            background: '#fff',
-            borderBottom: '1px solid #eceff3',
-            padding: '0 24px',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            padding: 0,
           }}
         >
-          <div style={{ fontSize: 13, color: '#8a9099' }}>
-            {user?.primaryOrgName || '未分配部门'}
-            {user?.isLeader && (
-              <Tag color="red" style={{ marginLeft: 8 }}>
-                负责人 · 一票否决权
-              </Tag>
-            )}
-          </div>
-
-          <Dropdown
-            menu={{
-              items: [
-                { key: 'profile', icon: <UserOutlined />, label: `${user?.name}（${user?.account}）`, disabled: true },
-                { type: 'divider' },
-                { key: 'logout', icon: <LogoutOutlined />, label: '退出登录', onClick: () => { logout(); navigate('/login'); } },
-              ],
+          <div
+            style={{
+              maxWidth: 1440,
+              width: '100%',
+              margin: '0 auto',
+              padding: '0 36px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <Avatar size={28} style={{ background: '#185fa5' }}>
-                {user?.name?.slice(0, 1)}
-              </Avatar>
-              <span style={{ fontSize: 13 }}>{user?.name}</span>
+            <div style={{ fontSize: 13, color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>{user?.primaryOrgName || '未分配部门'}</span>
+              {user?.isLeader && (
+                <>
+                  <span style={{ color: 'var(--border-strong)' }}>·</span>
+                  <span style={{ color: 'var(--danger)', fontSize: 12.5 }}>负责人 · 一票否决</span>
+                </>
+              )}
             </div>
-          </Dropdown>
+
+            <Dropdown
+              trigger={['click']}
+              menu={{
+                items: [
+                  {
+                    key: 'profile',
+                    label: (
+                      <div style={{ padding: '2px 0' }}>
+                        <div style={{ fontWeight: 500 }}>{user?.name}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{user?.account}</div>
+                      </div>
+                    ),
+                    disabled: true,
+                  },
+                  { type: 'divider' },
+                  {
+                    key: 'logout',
+                    icon: <LogoutOutlined />,
+                    label: '退出登录',
+                    onClick: () => {
+                      logout();
+                      navigate('/login');
+                    },
+                  },
+                ],
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 9,
+                  cursor: 'pointer',
+                  padding: '5px 12px 5px 6px',
+                  borderRadius: 980,
+                  transition: 'background .2s var(--ease)',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(128,128,128,0.1)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              >
+                <Avatar size={30} style={{ background: 'var(--accent)', fontSize: 13, fontWeight: 500, flex: 'none' }}>
+                  {user?.name?.slice(0, 1)}
+                </Avatar>
+                <span
+                  style={{
+                    fontSize: 13.5,
+                    fontWeight: 500,
+                    maxWidth: 96,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {user?.name}
+                </span>
+              </div>
+            </Dropdown>
+          </div>
         </Header>
 
         <Content style={{ overflow: 'auto' }}>

@@ -102,7 +102,7 @@ export default function Documents() {
               dataIndex: 'title',
               render: (t: string) => (
                 <Space size={6}>
-                  <FileTextOutlined style={{ color: '#8a9099' }} />
+                  <FileTextOutlined style={{ color: 'var(--text-3)' }} />
                   {t}
                 </Space>
               ),

@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    const token = localStorage.getItem('oooa_token');
+    const token = localStorage.getItem('croa_token');
     if (!token) {
       setUser(null);
       setLoading(false);
@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data } = await api.get('/auth/profile');
       setUser(data);
     } catch {
-      localStorage.removeItem('oooa_token');
+      localStorage.removeItem('croa_token');
       setUser(null);
     } finally {
       setLoading(false);
@@ -64,13 +64,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (account: string, password: string) => {
     const { data } = await api.post('/auth/login', { account, password });
-    localStorage.setItem('oooa_token', data.token);
+    localStorage.setItem('croa_token', data.token);
     setUser(data.user);
     return data.user as UserInfo;
   };
 
   const logout = () => {
-    localStorage.removeItem('oooa_token');
+    localStorage.removeItem('croa_token');
     setUser(null);
   };
 

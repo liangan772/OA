@@ -182,9 +182,15 @@ export default function FlowDetail() {
 
       <Card bodyStyle={{ padding: '18px 22px' }}>
         <Space size={10} style={{ marginBottom: 8 }}>
-          <span style={{ fontSize: 19, fontWeight: 500 }}>{inst.title}</span>
+          <span style={{ fontSize: 21, fontWeight: 600, letterSpacing: '-0.022em', lineHeight: 1.3 }}>
+            {inst.title}
+          </span>
           {statusTag(inst.status)}
-          {inst.round > 1 && <Tag color="orange">第 {inst.round} 轮</Tag>}
+          {inst.round > 1 && (
+            <Tag color="orange" bordered={false}>
+              第 {inst.round} 轮
+            </Tag>
+          )}
         </Space>
         <Descriptions size="small" column={3} style={{ marginTop: 6 }}>
           <Descriptions.Item label="流程">{data.definition.name}</Descriptions.Item>
@@ -301,13 +307,13 @@ export default function FlowDetail() {
             <Card
               size="small"
               title="我的处理"
-              style={{ marginBottom: 14, borderColor: '#185fa5' }}
+              style={{ marginBottom: 14, borderColor: 'var(--accent)' }}
               bodyStyle={{ padding: 16 }}
             >
-              <div style={{ marginBottom: 10, fontSize: 13, color: '#5c6370' }}>
+              <div style={{ marginBottom: 10, fontSize: 13, color: 'var(--text-2)' }}>
                 当前节点：<b>{myTask.nodeKey}</b>
                 {myTask.nodeType === 'VOTE' && (
-                  <div style={{ marginTop: 4, fontSize: 12, color: '#a32d2d' }}>
+                  <div style={{ marginTop: 4, fontSize: 12, color: 'var(--danger)' }}>
                     部门负责人投「不同意」将直接否决本节点
                   </div>
                 )}
@@ -322,8 +328,10 @@ export default function FlowDetail() {
               {actions()}
             </Card>
           ) : (
-            <Card size="small" style={{ marginBottom: 14 }}>
-              <Text type="secondary">你当前没有待处理事项</Text>
+            <Card size="small" style={{ marginBottom: 14 }} bodyStyle={{ padding: '20px 18px' }}>
+              <div style={{ textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
+                你当前没有待处理事项
+              </div>
             </Card>
           )}
 

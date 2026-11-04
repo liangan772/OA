@@ -348,7 +348,7 @@ export default function OrgManage() {
               <InputNumber min={1} max={99} />
             </Form.Item>
           </Space>
-          <div style={{ fontSize: 12, color: '#8a9099', marginTop: -8, marginBottom: 8 }}>
+          <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: -8, marginBottom: 8 }}>
             正职负责人编制位享有一票否决权，同一组织只能有一个。
           </div>
           <Form.Item name="duty" label="岗位职责">

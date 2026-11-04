@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Button, Card, Empty, List, Space, Spin, Tabs, Tag, Typography } from 'antd';
-import { ClockCircleOutlined, RightOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import { Button, Card, Empty, List, Space, Spin, Tabs, Tag } from 'antd';
+import { ClockCircleOutlined, RightOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import { useAuth } from '../store/auth';
-
-const { Text } = Typography;
 
 const STATUS_MAP: Record<string, { text: string; color: string }> = {
   RUNNING: { text: '进行中', color: 'processing' },
@@ -30,6 +28,15 @@ const FLOW_TYPE: Record<string, string> = {
   PUBLICITY: '公示',
 };
 
+const meter = (label: string, value: number, color: string) => (
+  <div className="stat-card">
+    <div style={{ fontSize: 12.5, color: 'var(--text-3)', letterSpacing: 0 }}>{label}</div>
+    <div className="stat-num" style={{ color }}>
+      {value}
+    </div>
+  </div>
+);
+
 export default function Workbench() {
   const [todo, setTodo] = useState<any[]>([]);
   const [done, setDone] = useState<any[]>([]);
@@ -52,7 +59,7 @@ export default function Workbench() {
 
   if (loading) {
     return (
-      <div className="page" style={{ display: 'flex', justifyContent: 'center', paddingTop: 120 }}>
+      <div className="page" style={{ display: 'flex', justifyContent: 'center', paddingTop: 140 }}>
         <Spin />
       </div>
     );
@@ -60,63 +67,78 @@ export default function Workbench() {
 
   return (
     <div className="page">
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 20 }}>
-        <div className="stat-card">
-          <Text type="secondary" style={{ fontSize: 13 }}>待我处理</Text>
-          <div className="stat-num" style={{ color: '#185fa5' }}>{todo.length}</div>
-        </div>
-        <div className="stat-card">
-          <Text type="secondary" style={{ fontSize: 13 }}>我发起 · 进行中</Text>
-          <div className="stat-num" style={{ color: '#ba7517' }}>{runningMine.length}</div>
-        </div>
-        <div className="stat-card">
-          <Text type="secondary" style={{ fontSize: 13 }}>我已处理</Text>
-          <div className="stat-num" style={{ color: '#1d9e75' }}>{done.length}</div>
+      <div style={{ marginBottom: 26 }}>
+        <h2 className="page-title" style={{ marginBottom: 6 }}>
+          {user?.name}，你好
+        </h2>
+        <div className="muted">
+          {dayjs().format('YYYY 年 M 月 D 日 dddd')}
+          {todo.length > 0 ? ` · 有 ${todo.length} 项待你处理` : ' · 暂无待办'}
         </div>
       </div>
 
-      <Card bodyStyle={{ padding: '4px 0 0' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 22 }}>
+        {meter('待我处理', todo.length, 'var(--accent)')}
+        {meter('我发起 · 进行中', runningMine.length, 'var(--warning)')}
+        {meter('我已处理', done.length, 'var(--success)')}
+      </div>
+
+      <Card bodyStyle={{ padding: '6px 22px 8px' }}>
         <Tabs
           defaultActiveKey="todo"
-          style={{ padding: '0 20px' }}
           items={[
             {
               key: 'todo',
-              label: `待办（${todo.length}）`,
+              label: `待办 ${todo.length}`,
               children: (
                 <List
                   dataSource={todo}
                   locale={{ emptyText: <Empty description="暂无待办" image={Empty.PRESENTED_IMAGE_SIMPLE} /> }}
                   renderItem={(item) => (
                     <List.Item
+                      style={{ padding: '15px 0', borderBlockEnd: '1px solid var(--border)' }}
                       actions={[
-                        <Button type="primary" size="small" onClick={() => navigate(`/flow/instance/${item.instanceId}`)}>
-                          去处理 <RightOutlined />
+                        <Button
+                          type="primary"
+                          size="small"
+                          shape="round"
+                          onClick={() => navigate(`/flow/instance/${item.instanceId}`)}
+                        >
+                          去处理 <RightOutlined style={{ fontSize: 10 }} />
                         </Button>,
                       ]}
-                      style={{ padding: '14px 0' }}
                     >
                       <List.Item.Meta
                         title={
                           <Space size={8}>
                             <span
-                              style={{ cursor: 'pointer', fontWeight: 500 }}
+                              style={{ cursor: 'pointer', fontWeight: 500, fontSize: 14.5 }}
                               onClick={() => navigate(`/flow/instance/${item.instanceId}`)}
                             >
                               {item.title}
                             </span>
-                            <Tag color="blue">{FLOW_TYPE[item.flowType] || item.flowType}</Tag>
-                            {item.round > 1 && <Tag color="orange">第 {item.round} 轮</Tag>}
+                            <Tag color="blue" bordered={false}>
+                              {FLOW_TYPE[item.flowType] || item.flowType}
+                            </Tag>
+                            {item.round > 1 && (
+                              <Tag color="orange" bordered={false}>
+                                第 {item.round} 轮
+                              </Tag>
+                            )}
                           </Space>
                         }
                         description={
-                          <Space size={16} style={{ fontSize: 12 }}>
+                          <Space size={14} style={{ fontSize: 12.5, color: 'var(--text-3)', marginTop: 2 }}>
                             <span>{item.flowName}</span>
-                            <span>当前节点：{item.nodeName}</span>
-                            <span>发起人：{item.initiatorName}</span>
+                            <span>当前：{item.nodeName}</span>
+                            <span>发起人 {item.initiatorName}</span>
                             {item.deadline && (
-                              <span style={{ color: dayjs(item.deadline).isBefore(dayjs()) ? '#a32d2d' : undefined }}>
-                                <ClockCircleOutlined /> 限 {dayjs(item.deadline).format('MM-DD HH:mm')}
+                              <span
+                                style={{
+                                  color: dayjs(item.deadline).isBefore(dayjs()) ? 'var(--danger)' : undefined,
+                                }}
+                              >
+                                <ClockCircleOutlined /> {dayjs(item.deadline).format('MM-DD HH:mm')}
                               </span>
                             )}
                           </Space>
@@ -129,28 +151,27 @@ export default function Workbench() {
             },
             {
               key: 'done',
-              label: `已办（${done.length}）`,
+              label: `已办 ${done.length}`,
               children: (
                 <List
                   dataSource={done}
                   locale={{ emptyText: <Empty description="暂无记录" image={Empty.PRESENTED_IMAGE_SIMPLE} /> }}
                   renderItem={(item) => (
-                    <List.Item style={{ padding: '14px 0' }}>
+                    <List.Item style={{ padding: '15px 0', borderBlockEnd: '1px solid var(--border)' }}>
                       <List.Item.Meta
                         title={
                           <Space size={8}>
                             <span
-                              style={{ cursor: 'pointer' }}
+                              style={{ cursor: 'pointer', fontSize: 14.5 }}
                               onClick={() => navigate(`/flow/instance/${item.instanceId}`)}
                             >
                               {item.title}
                             </span>
                             {statusTag(item.instanceStatus)}
-                            <Tag>我：{item.action || '已处理'}</Tag>
                           </Space>
                         }
                         description={
-                          <Space size={16} style={{ fontSize: 12 }}>
+                          <Space size={14} style={{ fontSize: 12.5, color: 'var(--text-3)', marginTop: 2 }}>
                             <span>{item.flowName}</span>
                             <span>{item.finishedAt ? dayjs(item.finishedAt).format('YYYY-MM-DD HH:mm') : ''}</span>
                             {item.opinion && <span>意见：{item.opinion}</span>}
@@ -164,30 +185,32 @@ export default function Workbench() {
             },
             {
               key: 'mine',
-              label: `我发起的（${mine.length}）`,
+              label: `我发起的 ${mine.length}`,
               children: (
                 <List
                   dataSource={mine}
                   locale={{ emptyText: <Empty description="暂无记录" image={Empty.PRESENTED_IMAGE_SIMPLE} /> }}
                   renderItem={(item) => (
                     <List.Item
+                      style={{ padding: '15px 0', borderBlockEnd: '1px solid var(--border)' }}
                       actions={[
-                        <Button size="small" onClick={() => navigate(`/flow/instance/${item.id}`)}>
+                        <Button size="small" shape="round" onClick={() => navigate(`/flow/instance/${item.id}`)}>
                           查看
                         </Button>,
                       ]}
-                      style={{ padding: '14px 0' }}
                     >
                       <List.Item.Meta
                         title={
                           <Space size={8}>
-                            <span>{item.title}</span>
+                            <span style={{ fontSize: 14.5 }}>{item.title}</span>
                             {statusTag(item.status)}
-                            <Tag color="blue">{FLOW_TYPE[item.flowType] || item.flowType}</Tag>
+                            <Tag color="blue" bordered={false}>
+                              {FLOW_TYPE[item.flowType] || item.flowType}
+                            </Tag>
                           </Space>
                         }
                         description={
-                          <Space size={16} style={{ fontSize: 12 }}>
+                          <Space size={14} style={{ fontSize: 12.5, color: 'var(--text-3)', marginTop: 2 }}>
                             <span>{item.flowName}</span>
                             <span>{dayjs(item.createdAt).format('YYYY-MM-DD HH:mm')}</span>
                             {item.round > 1 && <span>第 {item.round} 轮</span>}
@@ -202,10 +225,6 @@ export default function Workbench() {
           ]}
         />
       </Card>
-
-      <div style={{ marginTop: 16, fontSize: 12, color: '#98a0a9' }}>
-        <ThunderboltOutlined /> 你好，{user?.name}。你的表态会被记录在流程时间线中，负责人投否决将直接终止该节点。
-      </div>
     </div>
   );
 }
