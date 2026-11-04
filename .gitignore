@@ -13,3 +13,6 @@ packages/server/prisma/dev.db*
 coverage/
 uploads/
 .pgdata/
+
+# WorkBuddy 项目数据
+.workbuddy/
